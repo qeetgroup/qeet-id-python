@@ -33,3 +33,6 @@ htmlcov/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Local audit input (make audit)
+.audit-requirements.txt

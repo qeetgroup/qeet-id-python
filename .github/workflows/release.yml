@@ -1,0 +1,136 @@
+name: Release
+
+# Publishes qeet-id to PyPI on merge to main, then tags the commit — the same release flow as the
+# Qeetrix packages.
+#
+#   1. Open a PR into main. version.yml bumps the patch in pyproject.toml on the PR branch; raise
+#      minor or major by hand.
+#   2. Merge to main. The build job runs every check again and builds the sdist and wheel.
+#   3. The publish job runs in the `pypi` environment and publishes through PyPI trusted publishing
+#      (no stored token): on PyPI, the project's trusted publisher must name this repository, this
+#      workflow file (release.yml) and the "pypi" environment.
+#   4. The tag job pushes the vX.Y.Z tag and opens a GitHub Release.
+#
+# Re-running is safe: if the version is already on PyPI, nothing is published. A bad release is
+# yanked on PyPI; a version number is never reused.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Check and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      release: ${{ steps.version.outputs.release }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # tags must be visible
+          persist-credentials: false
+
+      - id: version
+        name: is there anything to release?
+        run: |
+          set -uo pipefail
+          version=$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if curl -sf -o /dev/null "https://pypi.org/pypi/qeet-id/$version/json"; then
+            echo "qeet-id $version is already on PyPI — nothing to do."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          elif git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+            echo "::error::Tag v$version exists but qeet-id $version is not on PyPI. Resolve by hand."
+            exit 1
+          else
+            echo "qeet-id $version is new — releasing."
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # The same gate as CI. Nothing below runs when the version is unchanged.
+      - if: steps.version.outputs.release == 'true'
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.7"
+      - if: steps.version.outputs.release == 'true'
+        run: uv sync --locked
+      - if: steps.version.outputs.release == 'true'
+        run: uv run --locked ruff check . && uv run --locked ruff format --check .
+      - if: steps.version.outputs.release == 'true'
+        run: uv run --locked python scripts/unasync.py --check && uv run --locked mypy
+      - if: steps.version.outputs.release == 'true'
+        run: uv run --locked pytest
+      - if: steps.version.outputs.release == 'true'
+        run: uv build && uvx twine==7.0.0 check --strict dist/* && uv run --locked python scripts/check_wheel.py dist
+
+      - if: steps.version.outputs.release == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: python-package-distributions
+          path: dist/
+          if-no-files-found: error
+
+      - if: steps.version.outputs.release == 'false'
+        name: report that there is nothing to release
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          {
+            echo "## Nothing to release"
+            echo
+            echo "\`$VERSION\` is already on PyPI."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    if: needs.build.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: pypi
+      url: https://pypi.org/project/qeet-id/
+    permissions:
+      id-token: write # trusted publishing and PEP 740 attestations; nothing else
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  tag:
+    name: Tag the release
+    needs: [build, publish]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write # push the version tag and create the release
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # Tag AFTER a successful publish, so every tag is a version that shipped.
+      - name: tag the release and open a GitHub Release
+        env:
+          TAG: v${{ needs.build.outputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "$TAG"
+          git push origin "$TAG"
+          gh release create "$TAG" --title "$TAG" --generate-notes --repo "${{ github.repository }}"

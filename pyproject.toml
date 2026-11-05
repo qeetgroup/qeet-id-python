@@ -1,0 +1,150 @@
+[project]
+name = "qeet-id"
+# The release workflow writes the released version here; see docs/llm/workflows.md.
+version = "0.1.0"
+description = "The server-side Python SDK for Qeet ID: manage an organisation's people and access, verify webhooks and access tokens, and run OAuth flows."
+readme = "README.md"
+authors = [{ name = "Qeet Group" }]
+requires-python = ">=3.11"
+keywords = ["qeet", "qeet-id", "identity", "authentication", "authorization", "oauth", "oidc", "saml", "scim", "webhooks", "jwt", "sdk"]
+classifiers = [
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
+  "Framework :: AsyncIO",
+  "Framework :: AnyIO",
+  "Topic :: Security",
+  "Topic :: Internet :: WWW/HTTP",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Typing :: Typed",
+]
+dependencies = [
+  # HTTP, sync and async. httpx2 is the maintained fork of httpx (ADR-0002).
+  "httpx2>=2.12,<3",
+  # Sleeping and locking in the async client on asyncio and trio alike; httpx2 already needs it.
+  "anyio>=4.10,<5",
+  # ES256 verification of access tokens (ADR-0006).
+  "cryptography>=44.0.1",
+]
+
+[project.urls]
+Homepage = "https://id.qeet.in"
+Documentation = "https://docs.qeet.in"
+Repository = "https://github.com/qeetgroup/qeet-id-python"
+Issues = "https://github.com/qeetgroup/qeet-id-python/issues"
+Changelog = "https://github.com/qeetgroup/qeet-id-python/blob/main/CHANGELOG.md"
+
+[dependency-groups]
+dev = [
+  "mypy>=2.4.1",
+  "pytest>=9.2",
+  "pytest-cov>=7.1",
+  "ruff>=0.17.3",
+]
+
+[tool.uv]
+# uv 0.9 syncs and tests, but its build fails on the sdist with a tar error; 0.13 builds it.
+required-version = ">=0.13"
+
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14"]
+build-backend = "uv_build"
+
+# ---------------------------------------------------------------------------
+# Lint and format
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+src = ["src", "tests", "scripts", "examples"]
+
+[tool.ruff.lint]
+select = [
+  "E", "W", "F",   # pycodestyle, pyflakes
+  "I",             # import order
+  "UP",            # modern syntax for the minimum Python
+  "B",             # likely bugs
+  "S",             # security (bandit)
+  "SIM", "C4", "PIE", "RET", "PT", "PL", "RUF",
+  "N",             # naming
+  "D",             # docstrings on the public surface
+  "ANN",           # annotations
+  "TID",           # banned and relative imports
+  "TC",            # imports only needed for typing
+  "LOG", "G",      # logging calls
+  "ASYNC",
+  "PTH",
+]
+ignore = [
+  "D100", "D104", "D105", "D107",  # module, package, magic-method and __init__ docstrings
+  "D203", "D213",                   # pick one docstring layout: D211 and D212
+  "PLR0913", "PLR2004",             # many arguments and magic numbers are the API's shape
+  "PLR0911", "PLR0912", "PLR0915",  # many returns, branches and statements: mapping functions, the clients
+  "ANN401",                         # decoded JSON is Any until a method's return type declares it
+  "RET505", "RET506",               # else after return reads better in error mapping
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "D", "ANN", "PLR", "SLF001", "PT011"]
+"tests/test_resources.py" = ["E501"]  # the request table: one call per row reads better than wrapped
+"scripts/**" = ["D", "S603", "S607", "T201", "PTH"]
+"examples/**" = ["T201", "S104", "INP001"]
+"src/qeet_id/types/**" = ["D101"]
+"src/qeet_id/_async/resources/**" = ["D102"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+known-first-party = ["qeet_id"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "parents"
+
+# ---------------------------------------------------------------------------
+# Type checking
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unreachable = true
+# Not redundant-expr: argument checks guard callers who don't type-check.
+enable_error_code = ["ignore-without-code", "truthy-bool", "possibly-undefined"]
+files = ["src", "tests", "scripts", "examples"]
+
+# Resource methods return the decoded JSON body, which is untyped until it is
+# declared as the method's return type: the boundary where Any becomes a
+# TypedDict. Everything else stays strict.
+[[tool.mypy.overrides]]
+module = ["qeet_id._async.resources.*", "qeet_id._sync.resources.*"]
+warn_return_any = false
+
+# PyYAML is only used by scripts/snapshot_contract.py, run with `uv run --with pyyaml`.
+[[tool.mypy.overrides]]
+module = ["yaml"]
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------------------
+# Tests
+
+[tool.pytest.ini_options]
+minversion = "9.0"
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+xfail_strict = true
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+source = ["qeet_id"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_also = ["if TYPE_CHECKING:", "@overload", "raise NotImplementedError", "\\.\\.\\."]
