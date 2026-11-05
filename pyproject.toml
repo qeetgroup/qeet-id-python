@@ -48,6 +48,10 @@ dev = [
   "ruff>=0.17.3",
 ]
 
+[tool.uv]
+# uv 0.9 syncs and tests, but its build fails on the sdist with a tar error; 0.13 builds it.
+required-version = ">=0.13"
+
 [build-system]
 requires = ["uv_build>=0.13.7,<0.14"]
 build-backend = "uv_build"
