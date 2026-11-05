@@ -52,9 +52,6 @@ dev = [
 requires = ["uv_build>=0.13.7,<0.14"]
 build-backend = "uv_build"
 
-[tool.uv]
-required-version = ">=0.13"
-
 # ---------------------------------------------------------------------------
 # Lint and format
 

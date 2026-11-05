@@ -9,7 +9,7 @@ uv sync
 make check   # lint, generated client, mypy, tests with coverage, package, audit
 ```
 
-Requires uv 0.13 or later; it installs the Python the project needs.
+Requires [uv](https://docs.astral.sh/uv/) (CI uses 0.13.7; 0.9 works too); it installs the Python the project needs.
 
 ## Conventions
 
