@@ -8,7 +8,7 @@
 [![Typed](https://img.shields.io/badge/typed-mypy%20--strict-2EA043)](#-typing)
 [![Sync + async](https://img.shields.io/badge/clients-sync%20%2B%20async-7C3AED)](#-quick-start)
 [![Runtime dependencies](https://img.shields.io/badge/runtime%20dependencies-3-2EA043)](pyproject.toml)
-[![Tests](https://img.shields.io/badge/tests-975%20passing-2EA043)](tests)
+[![Tests](https://img.shields.io/badge/tests-991%20passing-2EA043)](tests)
 [![OpenID Connect](https://img.shields.io/badge/OpenID%20Connect-%E2%9C%93-F78C40?logo=openid&logoColor=white)](#-oauth)
 
 [🌐 Qeet ID](https://id.qeet.in) · [📖 Docs](https://docs.qeet.in) · [🚀 Quick start](#-quick-start) · [🧭 Resources](#-resources) · [📝 Changelog](CHANGELOG.md) · [🟢 Node SDK](https://github.com/qeetgroup/qeet-id-node) · [🐹 Go SDK](https://github.com/qeetgroup/qeet-id-go)
