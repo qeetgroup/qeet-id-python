@@ -1,0 +1,5 @@
+# Test fixtures gitleaks flags as generic API keys: dummy keys, secrets and a sample
+# token in tests and in the script that captures webhook fixtures. Each entry is one
+# finding's fingerprint (commit:file:rule:line), so a new secret anywhere is still caught.
+
+47ec980a1a5ddd32e48b212c84c80293595c607c:scripts/capture_webhook_fixtures.sh:generic-api-key:90
