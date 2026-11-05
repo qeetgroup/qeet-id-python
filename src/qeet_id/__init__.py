@@ -43,6 +43,7 @@ from qeet_id._options import AppInfo, RequestOptions
 from qeet_id._pagination import AsyncPage, AsyncPaginator, ListResult, Page
 from qeet_id._sync._client import QeetID
 from qeet_id._version import __version__
+from qeet_id.tokens import AccessTokenClaims, AsyncTokenVerifier, TokenVerifier
 from qeet_id.webhooks import (
     WebhookEvent,
     construct_webhook_event,
@@ -55,10 +56,12 @@ __all__ = [
     "DEFAULT_MAX_RETRIES",
     "DEFAULT_TIMEOUT",
     "APIError",
+    "AccessTokenClaims",
     "AppInfo",
     "AsyncPage",
     "AsyncPaginator",
     "AsyncQeetID",
+    "AsyncTokenVerifier",
     "AuthenticationError",
     "BadRequestError",
     "ConflictError",
@@ -81,6 +84,7 @@ __all__ = [
     "SessionRevokedError",
     "TokenVerificationError",
     "TokenVerificationErrorCode",
+    "TokenVerifier",
     "ValidationError",
     "WebhookEvent",
     "WebhookVerificationError",
