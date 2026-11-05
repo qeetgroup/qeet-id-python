@@ -1,0 +1,90 @@
+# qeet-id-python — repository context metadata (Level 2).
+# Inherits qeetgroup/qeet-context (L0) and qeetgroup/qeet-id-context (L1).
+
+schema_version: 1
+
+context: {type: repository, level: L2, canonical: true, last_verified: "2026-11-05"}
+
+inheritance:
+  organization: {repository: qeetgroup/qeet-context, level: L0}
+  product:      {repository: qeetgroup/qeet-id-context, level: L1}
+
+repository:
+  name: qeet-id-python
+  product: qeet-id
+  type: sdk
+  role: sdk
+  status: development        # no version on PyPI yet
+  visibility: public
+  default_branch: main
+
+runtime:
+  language: Python
+  python: ">=3.11"           # tested on 3.11, 3.12, 3.13, 3.14 and 3.15
+  package_manager: uv@0.13.7
+  build_backend: uv_build
+  lint_format: ruff
+  type_check: mypy --strict
+  runtime_deps: [httpx2, anyio, cryptography]
+
+module: {name: qeet-id, import: qeet_id, version: "0.0.0"}  # the release workflow writes the version
+
+architecture:
+  clients: [QeetID, AsyncQeetID]       # one core; async is the source, sync generated (ADR-0001)
+  http: httpx2                         # ADR-0002
+  layout: api-area-modules             # resources/{identity,access,federation,oauth,developer,operations}.py (ADR-0003)
+  wire_types: TypedDict                # the API's field names; bodies as Unpack keyword arguments (ADR-0004)
+  error_style: raise                   # QeetIDError hierarchy
+  retries: retry-safe-only             # ADR-0005
+  jwt: cryptography                    # ES256, no JWT library (ADR-0006)
+  oauth_client_auth: client_secret_basic  # form-encoded first (ADR-0007)
+  shared: [src/qeet_id/_errors.py, src/qeet_id/_retry.py, src/qeet_id/_request.py, src/qeet_id/_pagination.py, src/qeet_id/_jwt.py, src/qeet_id/webhooks.py]
+
+contracts:
+  consumes:
+    api: qeet-id-server
+    documents: [api/openapi/auth.yaml, api/openapi/management.yaml, api/openapi/federation.yaml, api/openapi/developer.yaml, api/openapi/operations.yaml]
+    snapshot: tests/contract/openapi.json   # scripts/snapshot_contract.py
+    tiebreaker: internal/ handlers
+    base_url: https://api.id.qeet.in
+  auth_scheme: ["Authorization: ApiKey <qk_...>", "Authorization: Bearer <client-credentials token>"]
+  webhook_signature: "X-Qeet-Signature: sha256=HMAC(secret, X-Qeet-Timestamp + '.' + body); two values during a rotation"
+
+defaults:
+  timeout_seconds: 30
+  max_retries: 2
+  retry_backoff: 0.5s doubling to 8s, equal jitter; Retry-After honoured up to 60s
+  webhook_tolerance_seconds: 300
+  jwks_cache_ttl_seconds: 300
+  jwks_refresh_cooldown_seconds: 30
+  token_leeway_seconds: 30
+  client_credentials_refresh_margin_seconds: 60
+
+commands:
+  install: uv sync
+  check:   make check     # lint + generated client + mypy + tests with coverage + package + audit — the gate
+  build:   uv build
+  test:    make test
+
+ci:
+  workflows: [ci.yml, codeql.yml, lint.yml, release.yml, security.yml]
+  matrix: ["3.11", "3.12", "3.13", "3.14", "3.15"]
+  release: workflow_dispatch on main -> uv version -> gate -> build -> PyPI trusted publishing -> commit bump, tag vX.Y.Z
+
+security:
+  sensitive_paths:
+    - src/qeet_id/_async/_transport.py        # credentials, redirects, retries
+    - src/qeet_id/_async/_credentials.py      # API key, client-credentials token cache
+    - src/qeet_id/webhooks.py                 # HMAC, timestamp, constant-time compare
+    - src/qeet_id/_jwt.py                     # ES256, issuer, audience, claims
+    - src/qeet_id/_async/_token_verifier.py   # JWKS cache and refresh
+  never: [add a runtime dependency, log a credential, retry a non-idempotent write, retry a 401, hand-edit src/qeet_id/_sync]
+
+llm_context:
+  primary_instructions: AGENTS.md
+  canonical: docs/llm/context.md
+  boundaries: docs/llm/boundaries.md
+  workflows: docs/llm/workflows.md
+  architecture_map: docs/llm/architecture-map.md
+  practices: docs/engineering-practices.md
+  adapters: [CLAUDE.md, GEMINI.md, .github/copilot-instructions.md]
