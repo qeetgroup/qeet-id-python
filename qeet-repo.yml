@@ -27,7 +27,7 @@ runtime:
   type_check: mypy --strict
   runtime_deps: [httpx2, anyio, cryptography]
 
-module: {name: qeet-id, import: qeet_id, version: "0.0.0"}  # the release workflow writes the version
+module: {name: qeet-id, import: qeet_id, version: "0.1.0"}  # version.yml bumps the patch on PRs into main
 
 architecture:
   clients: [QeetID, AsyncQeetID]       # one core; async is the source, sync generated (ADR-0001)
@@ -67,9 +67,9 @@ commands:
   test:    make test
 
 ci:
-  workflows: [ci.yml, codeql.yml, lint.yml, release.yml, security.yml]
+  workflows: [ci.yml, codeql.yml, lint.yml, release.yml, security.yml, version.yml]
   matrix: ["3.11", "3.12", "3.13", "3.14", "3.15"]
-  release: workflow_dispatch on main -> uv version -> gate -> build -> PyPI trusted publishing -> commit bump, tag vX.Y.Z
+  release: PR into main -> version.yml bumps pyproject.toml (uv version); push main -> version not on PyPI -> gate -> build -> PyPI trusted publishing -> tag vX.Y.Z + GitHub release
 
 security:
   sensitive_paths:

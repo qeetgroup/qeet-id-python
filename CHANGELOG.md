@@ -6,6 +6,8 @@ All notable changes to the Qeet ID Python SDK are documented here. The format fo
 
 ## [Unreleased]
 
+## [0.1.0] — 2026-11-05
+
 The SDK, built against the API's five OpenAPI documents, with the coverage and behaviour of the Node.js and
 Go SDKs.
 
@@ -55,3 +57,6 @@ Go SDKs.
   in the form body. The client-credentials grant is retried like a read.
 - `groups.create` sends no `tenant_id`: the API takes the organisation from the credential.
 - `PaymentRequiredError` for 402.
+
+[Unreleased]: https://github.com/qeetgroup/qeet-id-python/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/qeetgroup/qeet-id-python/releases/tag/v0.1.0

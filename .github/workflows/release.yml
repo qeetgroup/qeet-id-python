@@ -1,23 +1,26 @@
 name: Release
 
-# Run by hand from main (Actions > Release > Run workflow), choosing the part of
-# the version to bump. Merging into main never publishes by itself: the version
-# is decided when a release is run, not by whichever merge came last.
+# Publishes qeet-id to PyPI on merge to main, then tags the commit — the same release flow as the
+# Qeetrix packages.
 #
-# PyPI trusted publishing: no API token is stored. On PyPI, the project's
-# trusted publisher must name this repository, this workflow file (release.yml)
-# and the "pypi" environment.
+#   1. Open a PR into main. version.yml bumps the patch in pyproject.toml on the PR branch; raise
+#      minor or major by hand.
+#   2. Merge to main. The build job runs every check again and builds the sdist and wheel.
+#   3. The publish job runs in the `pypi` environment and publishes through PyPI trusted publishing
+#      (no stored token): on PyPI, the project's trusted publisher must name this repository, this
+#      workflow file (release.yml) and the "pypi" environment.
+#   4. The tag job pushes the vX.Y.Z tag and opens a GitHub Release.
+#
+# Re-running is safe: if the version is already on PyPI, nothing is published. A bad release is
+# yanked on PyPI; a version number is never reused.
+
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
-    inputs:
-      bump:
-        description: Which version part to increment
-        type: choice
-        options: [patch, minor, major]
-        default: patch
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release
   cancel-in-progress: false
 
 permissions:
@@ -26,66 +29,74 @@ permissions:
 jobs:
   build:
     name: Check and build
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     outputs:
-      tag: ${{ steps.version.outputs.tag }}
+      release: ${{ steps.version.outputs.release }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 0 # full history to find the latest tag
+          fetch-depth: 0 # tags must be visible
           persist-credentials: false
 
-      - name: Determine next version
-        id: version
-        env:
-          # `type: choice` constrains this server-side, but keep it out of the
-          # script body anyway so the run block never interpolates input.
-          BUMP: ${{ inputs.bump || 'patch' }}
+      - id: version
+        name: is there anything to release?
         run: |
-          latest=$(git tag --list 'v*' --sort=-version:refname | head -1)
-          latest=${latest:-v0.0.0}
-          IFS='.' read -r major minor patch <<< "${latest#v}"
-          case "$BUMP" in
-            major) new_tag="v$((major + 1)).0.0" ;;
-            minor) new_tag="v${major}.$((minor + 1)).0" ;;
-            *)     new_tag="v${major}.${minor}.$((patch + 1))" ;;
-          esac
-          echo "Latest: $latest  ->  new: $new_tag"
-          echo "tag=$new_tag" >> "$GITHUB_OUTPUT"
+          set -uo pipefail
+          version=$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if curl -sf -o /dev/null "https://pypi.org/pypi/qeet-id/$version/json"; then
+            echo "qeet-id $version is already on PyPI — nothing to do."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          elif git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+            echo "::error::Tag v$version exists but qeet-id $version is not on PyPI. Resolve by hand."
+            exit 1
+          else
+            echo "qeet-id $version is new — releasing."
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
 
-      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      # The same gate as CI. Nothing below runs when the version is unchanged.
+      - if: steps.version.outputs.release == 'true'
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version: "0.13.7"
+      - if: steps.version.outputs.release == 'true'
+        run: uv sync --locked
+      - if: steps.version.outputs.release == 'true'
+        run: uv run --locked ruff check . && uv run --locked ruff format --check .
+      - if: steps.version.outputs.release == 'true'
+        run: uv run --locked python scripts/unasync.py --check && uv run --locked mypy
+      - if: steps.version.outputs.release == 'true'
+        run: uv run --locked pytest
+      - if: steps.version.outputs.release == 'true'
+        run: uv build && uvx twine==7.0.0 check --strict dist/* && uv run --locked python scripts/check_wheel.py dist
 
-      # PyPI publishes the version in pyproject.toml, not the git tag, so the
-      # two have to agree. Set it before the gate so the built artifacts carry
-      # it; the change is committed only once the publish succeeds.
-      - name: Set package version
-        env:
-          VERSION: ${{ steps.version.outputs.tag }}
-        run: uv version "${VERSION#v}"
-
-      - run: uv sync --locked
-      - run: uv run --locked ruff check .
-      - run: uv run --locked ruff format --check .
-      - run: uv run --locked python scripts/unasync.py --check
-      - run: uv run --locked mypy
-      - run: uv run --locked pytest
-      - run: uv build
-      - run: uvx twine==7.0.0 check --strict dist/*
-      - run: uv run --locked python scripts/check_wheel.py dist
-
-      - uses: actions/upload-artifact@v7
+      - if: steps.version.outputs.release == 'true'
+        uses: actions/upload-artifact@v7
         with:
           name: python-package-distributions
           path: dist/
           if-no-files-found: error
 
+      - if: steps.version.outputs.release == 'false'
+        name: report that there is nothing to release
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          {
+            echo "## Nothing to release"
+            echo
+            echo "\`$VERSION\` is already on PyPI."
+          } >> "$GITHUB_STEP_SUMMARY"
+
   publish:
     name: Publish to PyPI
     needs: build
+    if: needs.build.outputs.release == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment:
       name: pypi
       url: https://pypi.org/project/qeet-id/
@@ -103,31 +114,23 @@ jobs:
     name: Tag the release
     needs: [build, publish]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
-      contents: write # push the version bump and tag after a successful publish
+      contents: write # push the version tag and create the release
     steps:
       - uses: actions/checkout@v7
-
-      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          version: "0.13.7"
+          fetch-depth: 0
 
-      # Commit and tag AFTER a successful publish so every tag is a version that
-      # is live on PyPI. This push uses GITHUB_TOKEN, which by design doesn't
-      # trigger workflows, so it can't loop back into this one.
-      - name: Commit version bump, tag and create GitHub release
+      # Tag AFTER a successful publish, so every tag is a version that shipped.
+      - name: tag the release and open a GitHub Release
         env:
-          VERSION: ${{ needs.build.outputs.tag }}
+          TAG: v${{ needs.build.outputs.version }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          uv version "${VERSION#v}"
+          set -euo pipefail
           git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add pyproject.toml uv.lock
-          git commit -m "chore(release): $VERSION [skip ci]"
-          git tag "$VERSION"
-          git push origin HEAD:main --follow-tags
-          gh release create "$VERSION" \
-            --title "$VERSION" \
-            --generate-notes \
-            --repo "${{ github.repository }}"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "$TAG"
+          git push origin "$TAG"
+          gh release create "$TAG" --title "$TAG" --generate-notes --repo "${{ github.repository }}"

@@ -73,15 +73,17 @@ make audit                               # pip-audit over every locked dependenc
 
 `ci.yml` on Python 3.11, 3.12, 3.13, 3.14 and 3.15: tests with coverage; then build, `twine check` and the
 wheel's contents. `lint.yml`: Ruff, the generated client and mypy. `security.yml`: pip-audit and gitleaks.
-`codeql.yml`: Python and the workflows. `release.yml`: run by hand on `main` (patch, minor or major);
-publishes to PyPI by trusted publishing and tags the version. Merging into `main` never publishes. The
+`codeql.yml`: Python and the workflows. `version.yml` bumps the patch in `pyproject.toml` on every pull request into `main`
+(raise minor or major by hand). `release.yml` runs on every push to `main`: when PyPI does not have that
+version yet, it runs the gate, builds, publishes by trusted publishing, then tags `vX.Y.Z` and opens a
+GitHub Release; otherwise it does nothing. The
 workflows run on pushes to `main` and pull requests to it, not on other branches.
 
 ## Branches
 
 Two long-lived branches: `develop`, where work lands, and `main`, what is released. Changes reach `main`
 only by a pull request from `develop`. There are no release branches: a version is a `vX.Y.Z` tag, made
-when `release.yml` is run on `main`.
+by `release.yml` when a pull request is merged into `main`.
 
 ## Before you finish
 

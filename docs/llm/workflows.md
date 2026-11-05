@@ -77,11 +77,14 @@ unknown kid, wrong issuer or audience).
 ```text
 1  CHANGELOG.md: move [Unreleased] under the version being released
 2  make check
-3  merge develop into main (pull request), which publishes nothing
-4  run release.yml on main by hand, choosing patch, minor or major: it takes the latest vX.Y.Z tag, bumps
-   it, writes it into pyproject.toml (uv version), runs the gate, builds, publishes to PyPI by trusted
-   publishing, then commits the bump and tags it
+3  open a pull request from develop into main: version.yml bumps the patch in pyproject.toml (uv version)
+   on the PR branch (for a minor or major, run `uv version --bump minor` yourself)
+4  merge it: release.yml sees a version PyPI does not have, runs the gate, builds, publishes to PyPI by
+   trusted publishing, then tags vX.Y.Z and opens a GitHub Release
 ```
+
+A push whose version is already on PyPI releases nothing, so re-running is safe. A bad release is
+yanked on PyPI, never replaced: release a fixed version.
 
 Before the first release, the PyPI project needs a trusted publisher for this repository, `release.yml`
 and the `pypi` environment.
