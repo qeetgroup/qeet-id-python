@@ -635,8 +635,9 @@ class LDAPConnections(APIResource):
 
             result = client.ldap_connections.authenticate(connection_id, username=u, password=p)
             if result["type"] == "mfa_challenge":
-                return ask_for_second_factor(result["challenge"]["mfa_token"])
-            start_session(result["tokens"])
+                ask_for_second_factor(result["challenge"]["mfa_token"])
+            else:
+                start_session(result["tokens"])
 
         Sends no credential of the client: the endpoint is public. Never retried, as
         each failed attempt counts towards the lockout.

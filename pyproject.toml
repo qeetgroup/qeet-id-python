@@ -61,7 +61,7 @@ required-version = ">=0.13"
 [tool.ruff]
 line-length = 120
 target-version = "py311"
-src = ["src", "tests", "scripts"]
+src = ["src", "tests", "scripts", "examples"]
 
 [tool.ruff.lint]
 select = [
@@ -93,6 +93,7 @@ ignore = [
 "tests/**" = ["S101", "S105", "S106", "D", "ANN", "PLR", "SLF001", "PT011"]
 "tests/test_resources.py" = ["E501"]  # the request table: one call per row reads better than wrapped
 "scripts/**" = ["D", "S603", "S607", "T201", "PTH"]
+"examples/**" = ["T201", "S104", "INP001"]
 "src/qeet_id/types/**" = ["D101"]
 "src/qeet_id/_async/resources/**" = ["D102"]
 
@@ -114,7 +115,7 @@ strict = true
 warn_unreachable = true
 # Not redundant-expr: argument checks guard callers who don't type-check.
 enable_error_code = ["ignore-without-code", "truthy-bool", "possibly-undefined"]
-files = ["src", "tests", "scripts"]
+files = ["src", "tests", "scripts", "examples"]
 
 # Resource methods return the decoded JSON body, which is untyped until it is
 # declared as the method's return type: the boundary where Any becomes a
