@@ -43,6 +43,12 @@ from qeet_id._options import AppInfo, RequestOptions
 from qeet_id._pagination import AsyncPage, AsyncPaginator, ListResult, Page
 from qeet_id._sync._client import QeetID
 from qeet_id._version import __version__
+from qeet_id.webhooks import (
+    WebhookEvent,
+    construct_webhook_event,
+    sign_webhook_payload,
+    verify_webhook_signature,
+)
 
 __all__ = [
     "DEFAULT_BASE_URL",
@@ -76,7 +82,11 @@ __all__ = [
     "TokenVerificationError",
     "TokenVerificationErrorCode",
     "ValidationError",
+    "WebhookEvent",
     "WebhookVerificationError",
     "WebhookVerificationErrorCode",
     "__version__",
+    "construct_webhook_event",
+    "sign_webhook_payload",
+    "verify_webhook_signature",
 ]
