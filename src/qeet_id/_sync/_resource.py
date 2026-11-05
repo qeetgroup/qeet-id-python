@@ -5,7 +5,7 @@ from typing import Any
 
 from qeet_id._options import RequestOptions
 from qeet_id._pagination import ListResult, Page
-from qeet_id._request import HTTPMethod, QueryValue, Request
+from qeet_id._request import HTTPMethod, Request
 from qeet_id._sync._transport import Transport
 
 __all__ = ["APIResource"]
@@ -27,7 +27,7 @@ class APIResource:
         method: HTTPMethod,
         path: str,
         *,
-        query: Mapping[str, QueryValue] | None = None,
+        query: Mapping[str, object] | None = None,
         json: object = None,
         form: Mapping[str, str | None] | None = None,
         content: bytes | None = None,
@@ -59,7 +59,7 @@ class APIResource:
     def _list(
         self,
         path: str,
-        query: Mapping[str, QueryValue] | None = None,
+        query: Mapping[str, object] | None = None,
         *,
         key: str = "items",
         request_options: RequestOptions | None = None,
@@ -70,7 +70,7 @@ class APIResource:
     def _paginate(
         self,
         path: str,
-        query: Mapping[str, QueryValue],
+        query: Mapping[str, object],
         *,
         request_options: RequestOptions | None = None,
     ) -> Page[Any]:

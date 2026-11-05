@@ -14,6 +14,7 @@ response types are in :mod:`qeet_id.types`; webhook verification is in
 """
 
 from qeet_id._async._client import AsyncQeetID
+from qeet_id._async.resources.oauth import AsyncTokenGuard
 from qeet_id._constants import DEFAULT_BASE_URL, DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT
 from qeet_id._errors import (
     APIError,
@@ -42,6 +43,7 @@ from qeet_id._errors import (
 from qeet_id._options import AppInfo, RequestOptions
 from qeet_id._pagination import AsyncPage, AsyncPaginator, ListResult, Page
 from qeet_id._sync._client import QeetID
+from qeet_id._sync.resources.oauth import TokenGuard
 from qeet_id._version import __version__
 from qeet_id.tokens import AccessTokenClaims, AsyncTokenVerifier, TokenVerifier
 from qeet_id.webhooks import (
@@ -61,6 +63,7 @@ __all__ = [
     "AsyncPage",
     "AsyncPaginator",
     "AsyncQeetID",
+    "AsyncTokenGuard",
     "AsyncTokenVerifier",
     "AuthenticationError",
     "BadRequestError",
@@ -82,6 +85,7 @@ __all__ = [
     "RequestTimeoutError",
     "ServiceUnavailableError",
     "SessionRevokedError",
+    "TokenGuard",
     "TokenVerificationError",
     "TokenVerificationErrorCode",
     "TokenVerifier",

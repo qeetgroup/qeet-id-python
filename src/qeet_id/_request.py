@@ -4,7 +4,7 @@ import base64
 import json
 import keyword
 import uuid
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Literal, TypeAlias
 from urllib.parse import quote, quote_plus
@@ -12,7 +12,6 @@ from urllib.parse import quote, quote_plus
 __all__ = [
     "HTTPMethod",
     "QueryPairs",
-    "QueryValue",
     "Request",
     "basic_authorization",
     "check_idempotency_key",
@@ -23,9 +22,6 @@ __all__ = [
 ]
 
 HTTPMethod: TypeAlias = Literal["GET", "POST", "PUT", "PATCH", "DELETE"]
-
-QueryValue: TypeAlias = str | int | float | bool | Sequence[str | int | float | bool] | None
-"""A query-string value. ``None`` is left out; a list repeats the parameter; booleans are ``true``/``false``."""
 
 QueryPairs: TypeAlias = list[tuple[str, str | int | float | bool | None]]
 """Encoded query-string pairs, as httpx2 takes them."""
@@ -38,7 +34,7 @@ class Request:
     method: HTTPMethod
     path: str
     """Already encoded: build it with :func:`path`."""
-    query: Mapping[str, QueryValue] | None = None
+    query: Mapping[str, object] | None = None
     json: object = None
     """Sent as JSON when not ``None``."""
     form: Mapping[str, str | None] | None = None
@@ -97,7 +93,7 @@ def _query_text(value: str | int | float | bool) -> str:
     return str(value)
 
 
-def encode_query(query: Mapping[str, QueryValue] | None) -> QueryPairs:
+def encode_query(query: Mapping[str, object] | None) -> QueryPairs:
     """The query string's pairs: ``None`` left out, sequences repeated, ``from_`` sent as ``from``."""
     pairs: QueryPairs = []
     for key, value in (query or {}).items():
@@ -106,8 +102,10 @@ def encode_query(query: Mapping[str, QueryValue] | None) -> QueryPairs:
         name = _wire_name(key)
         if isinstance(value, str | int | float | bool):
             pairs.append((name, _query_text(value)))
-        else:
+        elif isinstance(value, list | tuple):
             pairs.extend((name, _query_text(item)) for item in value)
+        else:
+            raise TypeError(f"Query parameter {key} must be a string, number, boolean or list of them.")
     return pairs
 
 

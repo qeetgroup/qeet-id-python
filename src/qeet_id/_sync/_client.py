@@ -12,6 +12,54 @@ from qeet_id._constants import DEFAULT_BASE_URL, DEFAULT_MAX_RETRIES, DEFAULT_TI
 from qeet_id._options import AppInfo
 from qeet_id._sync._credentials import APIKeyAuth, ClientCredentialsAuth, Credential
 from qeet_id._sync._transport import Transport
+from qeet_id._sync.resources.access import (
+    AuthPolicies,
+    Decisions,
+    IPRules,
+    Permissions,
+    Relationships,
+    Roles,
+    SecurityPolicies,
+    ThreatDetection,
+)
+from qeet_id._sync.resources.developer import (
+    Agents,
+    APIKeys,
+    AuthHooks,
+    Secrets,
+    TokenVault,
+    VerifiableCredentials,
+    Webhooks,
+)
+from qeet_id._sync.resources.federation import (
+    SCIM,
+    AdminPortalLinks,
+    Applications,
+    LDAPConnections,
+    SAMLConnections,
+    SAMLServiceProviders,
+    ServicePrincipals,
+    SocialProviders,
+)
+from qeet_id._sync.resources.identity import (
+    Branding,
+    Domains,
+    Groups,
+    Invitations,
+    Tenants,
+    Users,
+)
+from qeet_id._sync.resources.oauth import OAuth
+from qeet_id._sync.resources.operations import (
+    GDPR,
+    Analytics,
+    AuditLogs,
+    Billing,
+    EmailTemplates,
+    LogSinks,
+    RateLimits,
+    Retention,
+)
 
 __all__ = ["QeetID"]
 
@@ -83,6 +131,55 @@ class QeetID:
             credential=credential,
             http_client=http_client,
         )
+        transport = self._transport
+
+        # Identity: the organisation, its people and groups.
+        self.tenants = Tenants(transport)
+        self.domains = Domains(transport)
+        self.users = Users(transport)
+        self.groups = Groups(transport)
+        self.invitations = Invitations(transport)
+        self.branding = Branding(transport)
+
+        # Access: who may do what, and how people sign in.
+        self.roles = Roles(transport)
+        self.permissions = Permissions(transport)
+        self.relationships = Relationships(transport)
+        self.decisions = Decisions(transport)
+        self.auth_policies = AuthPolicies(transport)
+        self.security_policies = SecurityPolicies(transport)
+        self.ip_rules = IPRules(transport)
+        self.threat_detection = ThreatDetection(transport)
+
+        # Federation: OAuth and OpenID Connect, SAML, directories, SCIM, social sign-in.
+        self.oauth = OAuth(transport)
+        self.applications = Applications(transport)
+        self.service_principals = ServicePrincipals(transport)
+        self.saml_connections = SAMLConnections(transport)
+        self.saml_service_providers = SAMLServiceProviders(transport)
+        self.ldap_connections = LDAPConnections(transport)
+        self.scim = SCIM(transport)
+        self.social_providers = SocialProviders(transport)
+        self.admin_portal_links = AdminPortalLinks(transport)
+
+        # Developer: API keys, agents, credentials, hooks, webhooks, secrets.
+        self.api_keys = APIKeys(transport)
+        self.agents = Agents(transport)
+        self.verifiable_credentials = VerifiableCredentials(transport)
+        self.auth_hooks = AuthHooks(transport)
+        self.webhooks = Webhooks(transport)
+        self.secrets = Secrets(transport)
+        self.token_vault = TokenVault(transport)
+
+        # Operations: audit, analytics, billing, compliance and limits.
+        self.audit_logs = AuditLogs(transport)
+        self.analytics = Analytics(transport)
+        self.billing = Billing(transport)
+        self.gdpr = GDPR(transport)
+        self.email_templates = EmailTemplates(transport)
+        self.retention = Retention(transport)
+        self.log_sinks = LogSinks(transport)
+        self.rate_limits = RateLimits(transport)
 
     @property
     def base_url(self) -> str:

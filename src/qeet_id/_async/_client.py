@@ -8,6 +8,54 @@ import httpx2
 
 from qeet_id._async._credentials import AsyncAPIKeyAuth, AsyncClientCredentialsAuth, AsyncCredential
 from qeet_id._async._transport import AsyncTransport
+from qeet_id._async.resources.access import (
+    AsyncAuthPolicies,
+    AsyncDecisions,
+    AsyncIPRules,
+    AsyncPermissions,
+    AsyncRelationships,
+    AsyncRoles,
+    AsyncSecurityPolicies,
+    AsyncThreatDetection,
+)
+from qeet_id._async.resources.developer import (
+    AsyncAgents,
+    AsyncAPIKeys,
+    AsyncAuthHooks,
+    AsyncSecrets,
+    AsyncTokenVault,
+    AsyncVerifiableCredentials,
+    AsyncWebhooks,
+)
+from qeet_id._async.resources.federation import (
+    AsyncAdminPortalLinks,
+    AsyncApplications,
+    AsyncLDAPConnections,
+    AsyncSAMLConnections,
+    AsyncSAMLServiceProviders,
+    AsyncSCIM,
+    AsyncServicePrincipals,
+    AsyncSocialProviders,
+)
+from qeet_id._async.resources.identity import (
+    AsyncBranding,
+    AsyncDomains,
+    AsyncGroups,
+    AsyncInvitations,
+    AsyncTenants,
+    AsyncUsers,
+)
+from qeet_id._async.resources.oauth import AsyncOAuth
+from qeet_id._async.resources.operations import (
+    AsyncAnalytics,
+    AsyncAuditLogs,
+    AsyncBilling,
+    AsyncEmailTemplates,
+    AsyncGDPR,
+    AsyncLogSinks,
+    AsyncRateLimits,
+    AsyncRetention,
+)
 from qeet_id._config import build_user_agent, check_headers, check_max_retries, check_timeout, normalize_base_url
 from qeet_id._constants import DEFAULT_BASE_URL, DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT
 from qeet_id._options import AppInfo
@@ -82,6 +130,55 @@ class AsyncQeetID:
             credential=credential,
             http_client=http_client,
         )
+        transport = self._transport
+
+        # Identity: the organisation, its people and groups.
+        self.tenants = AsyncTenants(transport)
+        self.domains = AsyncDomains(transport)
+        self.users = AsyncUsers(transport)
+        self.groups = AsyncGroups(transport)
+        self.invitations = AsyncInvitations(transport)
+        self.branding = AsyncBranding(transport)
+
+        # Access: who may do what, and how people sign in.
+        self.roles = AsyncRoles(transport)
+        self.permissions = AsyncPermissions(transport)
+        self.relationships = AsyncRelationships(transport)
+        self.decisions = AsyncDecisions(transport)
+        self.auth_policies = AsyncAuthPolicies(transport)
+        self.security_policies = AsyncSecurityPolicies(transport)
+        self.ip_rules = AsyncIPRules(transport)
+        self.threat_detection = AsyncThreatDetection(transport)
+
+        # Federation: OAuth and OpenID Connect, SAML, directories, SCIM, social sign-in.
+        self.oauth = AsyncOAuth(transport)
+        self.applications = AsyncApplications(transport)
+        self.service_principals = AsyncServicePrincipals(transport)
+        self.saml_connections = AsyncSAMLConnections(transport)
+        self.saml_service_providers = AsyncSAMLServiceProviders(transport)
+        self.ldap_connections = AsyncLDAPConnections(transport)
+        self.scim = AsyncSCIM(transport)
+        self.social_providers = AsyncSocialProviders(transport)
+        self.admin_portal_links = AsyncAdminPortalLinks(transport)
+
+        # Developer: API keys, agents, credentials, hooks, webhooks, secrets.
+        self.api_keys = AsyncAPIKeys(transport)
+        self.agents = AsyncAgents(transport)
+        self.verifiable_credentials = AsyncVerifiableCredentials(transport)
+        self.auth_hooks = AsyncAuthHooks(transport)
+        self.webhooks = AsyncWebhooks(transport)
+        self.secrets = AsyncSecrets(transport)
+        self.token_vault = AsyncTokenVault(transport)
+
+        # Operations: audit, analytics, billing, compliance and limits.
+        self.audit_logs = AsyncAuditLogs(transport)
+        self.analytics = AsyncAnalytics(transport)
+        self.billing = AsyncBilling(transport)
+        self.gdpr = AsyncGDPR(transport)
+        self.email_templates = AsyncEmailTemplates(transport)
+        self.retention = AsyncRetention(transport)
+        self.log_sinks = AsyncLogSinks(transport)
+        self.rate_limits = AsyncRateLimits(transport)
 
     @property
     def base_url(self) -> str:

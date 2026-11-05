@@ -57,16 +57,20 @@ class MockAPI:
 
     script: list[Step] = field(default_factory=list)
     requests: list[Recorded] = field(default_factory=list)
+    _step: int = 0
 
     def answer(self, *steps: Step) -> "MockAPI":
+        """Answer the next requests with ``steps``, from the first."""
         self.script = list(steps)
+        self._step = 0
         return self
 
     def handler(self, request: httpx2.Request) -> httpx2.Response:
         self.requests.append(Recorded(request.method, request.url, request.headers, request.read()))
         if not self.script:
             return httpx2.Response(200, json={})
-        step = self.script[min(len(self.requests) - 1, len(self.script) - 1)]
+        step = self.script[min(self._step, len(self.script) - 1)]
+        self._step += 1
         if isinstance(step, Exception):
             raise step
         if callable(step):

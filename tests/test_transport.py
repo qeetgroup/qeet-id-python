@@ -17,7 +17,7 @@ from qeet_id import (
     ServiceUnavailableError,
     SessionRevokedError,
 )
-from qeet_id._request import HTTPMethod, QueryValue, Request, check_idempotency_key, path
+from qeet_id._request import HTTPMethod, Request, check_idempotency_key, path
 from qeet_id._retry import is_retryable, retry_delay
 
 from .conftest import Client, Kind, MockAPI, envelope, run
@@ -34,7 +34,7 @@ async def send(
     *,
     idempotency_key: str | None = None,
     request_options: RequestOptions | None = None,
-    query: dict[str, QueryValue] | None = None,
+    query: dict[str, object] | None = None,
     **fields: Any,
 ) -> Any:
     request = Request(method=method, path=url_path, query=query, **fields)

@@ -75,7 +75,7 @@ def generate(into: Path) -> list[Path]:
     if written:
         config = ["--config", str(ROOT / "pyproject.toml")]
         files = [str(path) for path in written]
-        subprocess.run(["ruff", "check", "--quiet", "--fix", "--select", "I,F401", *config, *files], check=True)
+        subprocess.run(["ruff", "check", "--quiet", "--fix", "--select", "I,RUF022", *config, *files], check=True)
         subprocess.run(["ruff", "format", "--quiet", *config, *files], check=True)
     return written
 
