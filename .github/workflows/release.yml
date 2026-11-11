@@ -3,9 +3,9 @@ name: Release
 # Publishes qeet-id to PyPI on merge to main, then tags the commit — the same release flow as the
 # Qeetrix packages.
 #
-#   1. Open a PR into main. version.yml bumps the patch in pyproject.toml on the PR branch; raise
-#      minor or major by hand.
-#   2. Merge to main. The build job runs every check again and builds the sdist and wheel.
+#   1. Raise the version in pyproject.toml (patch, minor or major) on develop, then open a PR from
+#      develop into main; Verify runs on it.
+#   2. Merge to main. The build job checks that version is not on PyPI yet and builds the sdist and wheel.
 #   3. The publish job runs in the `pypi` environment and publishes through PyPI trusted publishing
 #      (no stored token): on PyPI, the project's trusted publisher must name this repository, this
 #      workflow file (release.yml) and the "pypi" environment.
@@ -57,19 +57,13 @@ jobs:
             echo "release=true" >> "$GITHUB_OUTPUT"
           fi
 
-      # The same gate as CI. Nothing below runs when the version is unchanged.
+      # Build and check the sdist and wheel. Nothing below runs when the version is unchanged.
       - if: steps.version.outputs.release == 'true'
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version: "0.13.7"
       - if: steps.version.outputs.release == 'true'
         run: uv sync --locked
-      - if: steps.version.outputs.release == 'true'
-        run: uv run --locked ruff check . && uv run --locked ruff format --check .
-      - if: steps.version.outputs.release == 'true'
-        run: uv run --locked python scripts/unasync.py --check && uv run --locked mypy
-      - if: steps.version.outputs.release == 'true'
-        run: uv run --locked pytest
       - if: steps.version.outputs.release == 'true'
         run: uv build && uvx twine==7.0.0 check --strict dist/* && uv run --locked python scripts/check_wheel.py dist
 
