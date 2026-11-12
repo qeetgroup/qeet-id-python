@@ -66,7 +66,7 @@ src/qeet_id/types/{identity,access,federation,developer,operations}.py   the Typ
 | Test helpers (`MockAPI`, `run`, `collect`) | `tests/conftest.py` |
 | **Every method's request, checked against the contract** | `tests/test_resources.py` |
 | Examples (type-checked) | `examples/` |
-| CI | `.github/workflows/{ci,lint,security,codeql,release}.yml` |
+| CI (Verify) and release | `.github/workflows/{ci,release}.yml` |
 
 ## Decisions
 

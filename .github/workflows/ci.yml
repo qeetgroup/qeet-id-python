@@ -1,55 +1,62 @@
-name: CI
+name: ci
 
+# Verify, on pull requests into develop and main: it type-checks (mypy), is formatted and linted (Ruff), has no known
+# vulnerability in its locked dependencies (pip-audit), and the pull request adds no secret (gitleaks). The tests on
+# every supported Python, the generated-client check and the package build run locally before every push
+# (`make check`, AGENTS.md).
 on:
-  push:
-    branches: [main]
   pull_request:
-    branches: [main]
-  workflow_dispatch:
+    branches: [develop, main]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  test:
-    name: Test (Python ${{ matrix.python }})
+  verify:
+    name: Verify
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        # Every maintained Python (pyproject.toml requires >=3.11). Drop one when it reaches end of life.
-        python: ["3.11", "3.12", "3.13", "3.14", "3.15"]
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          persist-credentials: false
-
-      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
-        with:
-          version: "0.13.7"
-          python-version: ${{ matrix.python }}
-
-      - run: uv sync --locked
-      - run: uv run --locked pytest --cov --cov-report=term-missing --cov-fail-under=95
-
-  package:
-    name: Package
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
+          fetch-depth: 0 # the pull request's commits, for the secret scan
           persist-credentials: false
 
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version: "0.13.7"
 
-      - run: uv sync --locked
-      - run: uv build
-      # The metadata PyPI renders, and the wheel holds the package, py.typed and nothing else.
-      - run: uvx twine==7.0.0 check --strict dist/*
-      - run: uv run --locked python scripts/check_wheel.py dist
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Compile (mypy)
+        run: uv run --locked mypy
+
+      - name: Format and lint
+        run: |
+          uv run --locked ruff check .
+          uv run --locked ruff format --check .
+
+      # Every locked dependency, runtime and development, against the PyPI and OSV advisory databases.
+      - name: Dependency audit
+        run: |
+          uv export --locked --all-groups --no-emit-project --format requirements.txt --output-file "$RUNNER_TEMP/requirements-audit.txt"
+          uvx pip-audit==2.10.1 --strict --require-hashes --disable-pip -r "$RUNNER_TEMP/requirements-audit.txt"
+
+      # The free gitleaks CLI (the gitleaks Action needs a paid licence for an organisation), pinned and checksum-verified,
+      # over this pull request's commits; .gitleaksignore lists the test fixtures.
+      - name: Secret scan
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfL -o "$RUNNER_TEMP/$archive" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}"
+          (cd "$RUNNER_TEMP" && echo "${GITLEAKS_SHA256}  ${archive}" | sha256sum --check --strict && tar -xzf "$archive" gitleaks)
+          "$RUNNER_TEMP/gitleaks" git --redact --exit-code 1 --log-opts="$BASE_SHA..$HEAD_SHA" .

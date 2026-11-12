@@ -71,13 +71,12 @@ make audit                               # pip-audit over every locked dependenc
 
 ## What CI enforces
 
-`ci.yml` on Python 3.11, 3.12, 3.13, 3.14 and 3.15: tests with coverage; then build, `twine check` and the
-wheel's contents. `lint.yml`: Ruff, the generated client and mypy. `security.yml`: pip-audit and gitleaks.
-`codeql.yml`: Python and the workflows. `version.yml` bumps the patch in `pyproject.toml` on every pull request into `main`
-(raise minor or major by hand). `release.yml` runs on every push to `main`: when PyPI does not have that
-version yet, it runs the gate, builds, publishes by trusted publishing, then tags `vX.Y.Z` and opens a
-GitHub Release; otherwise it does nothing. The
-workflows run on pushes to `main` and pull requests to it, not on other branches.
+`ci.yml`, **Verify**, on pull requests into `develop` and `main`: mypy, Ruff (lint and format check), pip-audit over
+every locked dependency and gitleaks over the pull request's commits. The tests on every supported Python
+(`make matrix`), the generated-client check and the package build run locally before every push (`make check`).
+`release.yml` runs on every push to `main`: when PyPI does not have the version in `pyproject.toml` yet, it builds,
+publishes by trusted publishing, then tags `vX.Y.Z` and opens a GitHub Release; otherwise it does nothing. Raise the
+version by hand in the pull request into `main`. Dependabot proposes updates monthly into `develop`.
 
 ## Branches
 
