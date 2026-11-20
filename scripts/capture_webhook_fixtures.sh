@@ -6,8 +6,8 @@
 # Copies the server's Event type and deliver function (internal/developer/webhook)
 # and its request signing (internal/platform/crypto/requestsig) verbatim out of
 # the given ref, without checking it out, wraps them in a small Go program, and
-# lets them post real deliveries to a local receiver. The receiver records each delivery's exact body and
-# headers. Needs Go.
+# lets them post real deliveries to a local receiver. The receiver records each
+# delivery's exact body and headers. Needs Go.
 set -euo pipefail
 
 server=${1:?usage: $0 /path/to/qeet-id-server [git-ref]}
