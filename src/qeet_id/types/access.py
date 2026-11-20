@@ -68,7 +68,7 @@ class Role(TypedDict):
     """A named set of permissions. Built-in roles (``owner``, ``admin``, ``member``, ``viewer``) can't change."""
 
     id: str
-    tenant_id: str
+    organization_id: str
     name: str
     description: NotRequired[str]
     is_system: bool
@@ -110,7 +110,7 @@ class Permission(TypedDict):
 class DecidedBy(TypedDict):
     """Which model decided an authorization question, and by which rule."""
 
-    model: Literal["tenant", "abac", "rbac", "rebac", "none"] | str
+    model: Literal["organization", "abac", "rbac", "rebac", "none"] | str
     rule: NotRequired[str]
     reason_code: NotRequired[str]
     reason_params: NotRequired[dict[str, Any]]
@@ -149,7 +149,7 @@ class PermissionDecision(TypedDict):
 
 
 class EffectivePermissions(TypedDict):
-    """Every permission a user holds in an organisation, and the grants behind them."""
+    """Every permission a user holds in an organization, and the grants behind them."""
 
     permissions: list[str]
     grants: list[GrantStep]
@@ -323,7 +323,7 @@ class AuthPolicyUpdateParams(TypedDict, total=False):
 
 
 class AuthPolicy(AuthPolicyUpdateParams, total=False):
-    """How people may sign in to the organisation."""
+    """How people may sign in to the organization."""
 
     lockout_limits: LockoutLimits
     """Read-only: the platform defaults and bounds of the lockout settings."""
@@ -373,9 +373,9 @@ class SecurityPolicyUpdateParams(TypedDict, total=False):
 
 
 class SecurityPolicy(SecurityPolicyUpdateParams, total=False):
-    """The organisation's security policy, or the platform defaults when none is saved."""
+    """The organization's security policy, or the platform defaults when none is saved."""
 
-    tenant_id: str
+    organization_id: str
 
 
 # ---------------------------------------------------------------------------
@@ -390,7 +390,7 @@ class IPRule(TypedDict):
     """An allow or deny rule for an address range. Deny wins over allow."""
 
     id: str
-    tenant_id: str
+    organization_id: str
     action: Literal["allow", "deny"] | str
     cidr: str
     label: str
@@ -398,7 +398,7 @@ class IPRule(TypedDict):
 
 
 class IPRuleList(TypedDict):
-    """The organisation's address rules, and whether they are enforced."""
+    """The organization's address rules, and whether they are enforced."""
 
     enabled: bool
     data: list[IPRule]

@@ -1,8 +1,8 @@
 [project]
 name = "qeet-id"
 # The release workflow writes the released version here; see docs/llm/workflows.md.
-version = "0.1.0"
-description = "The server-side Python SDK for Qeet ID: manage an organisation's people and access, verify webhooks and access tokens, and run OAuth flows."
+version = "0.2.0"
+description = "The server-side Python SDK for Qeet ID: manage an organization's people and access, verify webhooks and access tokens, and run OAuth flows."
 readme = "README.md"
 authors = [{ name = "Qeet Group" }]
 requires-python = ">=3.11"

@@ -42,7 +42,7 @@ from qeet_id._async.resources.identity import (
     AsyncDomains,
     AsyncGroups,
     AsyncInvitations,
-    AsyncTenants,
+    AsyncOrganizations,
     AsyncUsers,
 )
 from qeet_id._async.resources.oauth import AsyncOAuth
@@ -132,8 +132,8 @@ class AsyncQeetID:
         )
         transport = self._transport
 
-        # Identity: the organisation, its people and groups.
-        self.tenants = AsyncTenants(transport)
+        # Identity: the organization, its people and groups.
+        self.organizations = AsyncOrganizations(transport)
         self.domains = AsyncDomains(transport)
         self.users = AsyncUsers(transport)
         self.groups = AsyncGroups(transport)

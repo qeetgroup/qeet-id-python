@@ -1,4 +1,4 @@
-"""Identity: the organisation (tenant), its domains, users, groups, invitations and branding.
+"""Identity: the organization, its domains, users, groups, invitations and branding.
 
 Field names are the API's own (ADR-0004). Response fields the API may extend are
 typed ``Literal[...] | str``.
@@ -31,10 +31,10 @@ __all__ = [
     "LinkedIdentity",
     "MembershipRemoval",
     "MfaRequirement",
-    "Tenant",
-    "TenantBranding",
-    "TenantDeletion",
-    "TenantUpdateParams",
+    "Organization",
+    "OrganizationBranding",
+    "OrganizationDeletion",
+    "OrganizationUpdateParams",
     "User",
     "UserAccess",
     "UserAccessEntry",
@@ -52,19 +52,21 @@ __all__ = [
 ]
 
 # ---------------------------------------------------------------------------
-# Tenants
+# Organizations
 
 
-class Tenant(TypedDict):
-    """An organisation (a tenant). Every API key belongs to one."""
+class Organization(TypedDict):
+    """An organization. Every API key belongs to one."""
 
     id: str
     slug: str
     name: str
     status: Literal["active", "suspended"] | str
-    plan: Literal["free", "pro", "enterprise"] | str
+    plan: Literal["free", "starter", "pro", "enterprise"] | str
     region: str
-    metadata: dict[str, Any]
+    logo_url: str
+    """A hosted URL or a small inline data URL; empty when none is set."""
+    metadata: dict[str, Any] | None
     created_at: str
     updated_at: str
     deletion_due_at: NotRequired[str | None]
@@ -73,19 +75,20 @@ class Tenant(TypedDict):
     mfa_enabled_count: NotRequired[int]
 
 
-class TenantUpdateParams(TypedDict, total=False):
-    """The fields an update may change. Changing ``status`` is an owner's; the region can't change."""
+class OrganizationUpdateParams(TypedDict, total=False):
+    """The fields an update may change. Changing ``status`` is an owner's; the region and the plan can't change here."""
 
     name: str
     status: Literal["active", "suspended"]
-    plan: Literal["free", "pro", "enterprise"]
+    logo_url: str
+    """A hosted URL or a small inline data URL, up to 3,000,000 characters; empty removes it."""
     metadata: dict[str, Any]
 
 
-class TenantDeletion(TypedDict):
+class OrganizationDeletion(TypedDict):
     """A scheduled deletion."""
 
-    tenant_id: str
+    organization_id: str
     deletion_due_at: str
 
 
@@ -94,7 +97,7 @@ class TenantDeletion(TypedDict):
 
 
 class Domain(TypedDict):
-    """A domain the organisation claimed, with the DNS record that proves it."""
+    """A domain the organization claimed, with the DNS record that proves it."""
 
     id: str
     domain: str
@@ -109,7 +112,7 @@ class Domain(TypedDict):
     last_checked_at: NotRequired[str]
     last_error: NotRequired[str]
     sso_enabled: bool
-    """People on the domain sign in only through the organisation's SSO connection."""
+    """People on the domain sign in only through the organization's SSO connection."""
     jit_enabled: bool
     """Accounts are created on first SSO sign-in (just-in-time provisioning)."""
     created_at: str
@@ -128,7 +131,7 @@ UserStatus = Literal["active", "invited", "suspended"]
 
 
 class UserSuspension(TypedDict):
-    """Why, by whom and when an organisation's own user was suspended."""
+    """Why, by whom and when an organization's own user was suspended."""
 
     reason: str
     source: str
@@ -146,8 +149,8 @@ class User(TypedDict):
     """A user, as the API returns one."""
 
     id: str
-    tenant_id: str
-    """The user's home organisation."""
+    organization_id: str
+    """The user's home organization."""
     email: str
     email_verified_at: str | None
     phone: str | None
@@ -156,27 +159,27 @@ class User(TypedDict):
     avatar_url: str | None
     status: UserStatus | str
     metadata: dict[str, Any]
-    """Free-form data. Empty when the user's home is another organisation, which keeps it."""
+    """Free-form data. Empty when the user's home is another organization, which keeps it."""
     created_at: str
     updated_at: str
     roles: NotRequired[list[str]]
-    """Role names in the organisation reading the user; on lists and a member's own record."""
+    """Role names in the organization reading the user; on lists and a member's own record."""
     assigned_roles: NotRequired[list[AssignedRole]]
     mfa_enabled: NotRequired[bool]
     groups_count: NotRequired[int]
     last_seen_at: NotRequired[str | None]
     last_seen_ip: NotRequired[str | None]
-    home_tenant_name: NotRequired[str | None]
-    """The name of the organisation that manages the account."""
+    home_organization_name: NotRequired[str | None]
+    """The name of the organization that manages the account."""
     suspension: NotRequired[UserSuspension]
 
 
 class UserCreateParams(TypedDict, total=False):
-    tenant_id: Required[str]
-    """The organisation; must be the API key's own."""
+    organization_id: Required[str]
+    """The organization; must be the API key's own."""
     email: Required[str]
     password: str
-    """An initial password. It must meet the organisation's password rules."""
+    """An initial password. It must meet the organization's password rules."""
     display_name: str
     phone: str
     """E.164, such as ``+919876543210``."""
@@ -202,7 +205,7 @@ class UserListParams(TypedDict, total=False):
     q: str
     """Matches the display name, email or phone, case-insensitively."""
     role: str
-    """A role name in the organisation."""
+    """A role name in the organization."""
     department: str
     """Matches ``metadata.department``."""
     mfa: bool
@@ -239,8 +242,8 @@ class BulkUserRow(TypedDict, total=False):
 
 
 class UserBulkCreateParams(TypedDict, total=False):
-    tenant_id: str
-    """Optional; when present it must be the API key's own organisation."""
+    organization_id: str
+    """Optional; when present it must be the API key's own organization."""
     role_id: str
     """A role every created user receives."""
     users: Required[list[BulkUserRow]]
@@ -333,7 +336,7 @@ class UserAccessEntry(TypedDict):
 
 
 class UserAccess(TypedDict):
-    """A user's access in the organisation: roles, groups and permission counts."""
+    """A user's access in the organization: roles, groups and permission counts."""
 
     organization: UserAccessOrganization
     roles: list[UserAccessEntry]
@@ -350,7 +353,7 @@ class MfaRequirement(TypedDict):
 
 
 class MembershipRemoval(TypedDict):
-    """What removing a member who belongs to another organisation took away here."""
+    """What removing a member who belongs to another organization took away here."""
 
     id: str
     roles_removed: int
@@ -362,7 +365,7 @@ class LinkedIdentity(TypedDict):
 
     id: str
     user_id: str
-    tenant_id: str
+    organization_id: str
     provider: str
     subject: str
     email: str | None
@@ -382,7 +385,7 @@ class Group(TypedDict):
     """A group of users, optionally nested under a parent. Members inherit the group's roles."""
 
     id: str
-    tenant_id: str
+    organization_id: str
     parent_id: str | None
     name: str
     description: str
@@ -393,12 +396,12 @@ class Group(TypedDict):
 
 
 class GroupCreateParams(TypedDict, total=False):
-    """The organisation is the credential's own: the API takes it from there, not from the body."""
+    """The organization is the credential's own: the API takes it from there, not from the body."""
 
     name: Required[str]
     description: str
     parent_id: str | None
-    """One of the organisation's groups; omit or ``None`` for a top-level group."""
+    """One of the organization's groups; omit or ``None`` for a top-level group."""
 
 
 class GroupUpdateParams(TypedDict, total=False):
@@ -437,10 +440,10 @@ class InvitationDelivery(TypedDict):
 
 
 class Invitation(TypedDict):
-    """An invitation to join the organisation. Its token is never returned: the link goes only to the invitee."""
+    """An invitation to join the organization. Its token is never returned: the link goes only to the invitee."""
 
     id: str
-    tenant_id: str
+    organization_id: str
     email: str
     role_id: str | None
     """The role the invitee receives on accepting."""
@@ -453,7 +456,7 @@ class Invitation(TypedDict):
 
 
 class InvitationCreateParams(TypedDict, total=False):
-    tenant_id: Required[str]
+    organization_id: Required[str]
     email: Required[str]
     role_id: str | None
 
@@ -475,10 +478,10 @@ class BrandingSettings(TypedDict, total=False):
     email_reply_to: str
 
 
-class TenantBranding(TypedDict):
-    """How the hosted sign-in pages and emails look for the organisation."""
+class OrganizationBranding(TypedDict):
+    """How the hosted sign-in pages and emails look for the organization."""
 
-    tenant_id: str
+    organization_id: str
     logo_url: str | None
     """A URL or a base64 ``data:`` image (PNG, JPEG, WEBP or SVG, at most 2 MiB)."""
     primary_color: str | None

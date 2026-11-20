@@ -49,7 +49,7 @@ class OAuthGrants(APIResource):
 
     def list(
         self,
-        tenant_id: str,
+        organization_id: str,
         /,
         *,
         client_id: str | None = None,
@@ -59,20 +59,22 @@ class OAuthGrants(APIResource):
     ) -> Page[OAuthGrant]:
         """List the grants, latest used first; only those to ``client_id`` when given."""
         return self._paginate(
-            path("/v1/tenants/{}/oauth/grants", tenant_id),
+            path("/v1/organizations/{}/oauth/grants", organization_id),
             {"client_id": client_id, "limit": limit, "cursor": cursor},
             request_options=request_options,
         )
 
-    def revoke(self, tenant_id: str, grant_id: str, /, *, request_options: RequestOptions | None = None) -> None:
+    def revoke(self, organization_id: str, grant_id: str, /, *, request_options: RequestOptions | None = None) -> None:
         """Revoke one grant; the application must ask for consent again."""
         self._request(
-            "DELETE", path("/v1/tenants/{}/oauth/grants/{}", tenant_id, grant_id), request_options=request_options
+            "DELETE",
+            path("/v1/organizations/{}/oauth/grants/{}", organization_id, grant_id),
+            request_options=request_options,
         )
 
     def revoke_many(
         self,
-        tenant_id: str,
+        organization_id: str,
         /,
         *,
         ids: Sequence[str] | None = None,
@@ -88,7 +90,10 @@ class OAuthGrants(APIResource):
             raise ValueError("Give exactly one of ids and client_id.")
         body = {"ids": [*ids]} if ids is not None else {"client_id": client_id}
         return self._request(
-            "POST", path("/v1/tenants/{}/oauth/grants/revoke", tenant_id), json=body, request_options=request_options
+            "POST",
+            path("/v1/organizations/{}/oauth/grants/revoke", organization_id),
+            json=body,
+            request_options=request_options,
         )
 
 
@@ -96,17 +101,17 @@ class OAuthDevices(APIResource):
     """Device-flow authorizations, for review."""
 
     def list(
-        self, tenant_id: str, /, *, request_options: RequestOptions | None = None
+        self, organization_id: str, /, *, request_options: RequestOptions | None = None
     ) -> ListResult[OAuthDeviceAuthorization]:
-        return self._list(path("/v1/tenants/{}/oauth/devices", tenant_id), request_options=request_options)
+        return self._list(path("/v1/organizations/{}/oauth/devices", organization_id), request_options=request_options)
 
     def revoke(
-        self, tenant_id: str, device_authorization_id: str, /, *, request_options: RequestOptions | None = None
+        self, organization_id: str, device_authorization_id: str, /, *, request_options: RequestOptions | None = None
     ) -> None:
         """Revoke a device authorization; a grant it already bought ends too."""
         self._request(
             "DELETE",
-            path("/v1/tenants/{}/oauth/devices/{}", tenant_id, device_authorization_id),
+            path("/v1/organizations/{}/oauth/devices/{}", organization_id, device_authorization_id),
             request_options=request_options,
         )
 
@@ -121,6 +126,8 @@ class SigningKeys(APIResource):
 class OAuth(APIResource):
     """The token grants, introspection, revocation, the device and backchannel (CIBA) flows, and discovery.
 
+    Every grant goes to the one token endpoint, ``POST /v1/oauth/token`` (RFC 6749 §3.2),
+    and ``grant_type`` chooses it.
     Applications authenticate with HTTP Basic (``client_secret_basic``) when they
     have a secret, or by ``client_id`` in the form when they are public. The
     endpoints answer errors in the RFC 6749 shape and raise :class:`~qeet_id.OAuthError`,
@@ -142,12 +149,13 @@ class OAuth(APIResource):
     def client_credentials_grant(
         self, *, client_id: str, client_secret: str, request_options: RequestOptions | None = None
     ) -> ClientCredentialsToken:
-        """Get a machine-to-machine token for a service principal (``POST /v1/oauth/token``).
+        """Get a machine-to-machine token for a service principal or an AI agent (``POST /v1/oauth/token``).
 
-        The token carries the principal's scopes; ``expires_in`` and ``expires_at`` give its
-        lifetime. To have the client fetch and renew such tokens for its own calls, create it
-        with ``client_id`` and ``client_secret`` instead. Retried like a read: asking again only
-        issues another token.
+        ``client_id`` is the principal's or the agent's id, ``client_secret`` its secret. The token
+        carries every scope the identity holds; ``expires_in`` and ``expires_at`` give its lifetime.
+        To have the client fetch and renew such tokens for its own calls, create it with
+        ``client_id`` and ``client_secret`` instead. Retried like a read: asking again only issues
+        another token.
         """
         form: dict[str, str | None] = {"grant_type": "client_credentials"}
         auth = _client(form, client_id, client_secret, confidential=True)
@@ -301,7 +309,7 @@ class OAuth(APIResource):
     ) -> BackchannelAuthentication:
         """Start an OpenID CIBA request (poll mode): the person approves it on their own device.
 
-        ``login_hint`` is the person's email address in the client's organisation;
+        ``login_hint`` is the person's email address in the client's organization;
         ``binding_message`` is shown to them, such as a transaction reference.
         """
         form: dict[str, str | None] = {"login_hint": login_hint, "scope": scope, "binding_message": binding_message}
@@ -389,7 +397,7 @@ class OAuth(APIResource):
         # A grant is single-use: a retry after a lost answer would be refused, so none is made.
         return self._request(
             "POST",
-            "/v1/oauth/token-code",
+            "/v1/oauth/token",
             form=form,
             authenticate=False,
             client_auth=auth,

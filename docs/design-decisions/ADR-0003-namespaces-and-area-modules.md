@@ -11,7 +11,7 @@ One client, with every resource a direct attribute named in snake_case (`client.
 The namespaces and method names are the Node.js SDK's, in snake_case.
 
 The resource classes live in one module per OpenAPI document of the server, in both trees:
-`resources/identity.py` (management.yaml), `access.py` (auth.yaml), `federation.py` and `oauth.py`
+`resources/identity.py` (identity.yaml), `access.py` (access.yaml), `federation.py` and `oauth.py`
 (federation.yaml), `developer.py`, `operations.py`. The types follow the same split under
 `qeet_id/types/`.
 

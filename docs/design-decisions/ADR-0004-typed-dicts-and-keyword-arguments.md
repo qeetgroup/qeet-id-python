@@ -13,7 +13,7 @@ OpenAI's too).
 - Every request and response is a `TypedDict` whose keys are the API's own field names (snake_case,
   as the Node.js SDK keeps them, its ADR-0004). Responses are the decoded JSON, as is: `user["email"]`.
 - Request bodies are keyword arguments typed with `Unpack[...Params]` (PEP 692):
-  `client.users.create(tenant_id=..., email=...)`. Identifiers come first and are positional-only;
+  `client.users.create(organization_id=..., email=...)`. Identifiers come first and are positional-only;
   everything else is keyword-only. A Python keyword is spelt with a trailing underscore and sent
   without it (`from_` → `from`).
 - Per-call settings are one `request_options` argument (`timeout`, `max_retries`, `headers`), and

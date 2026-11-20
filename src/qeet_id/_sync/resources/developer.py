@@ -84,12 +84,12 @@ class APIKeys(APIResource):
             request_options=request_options,
         )
 
-    def list(self, tenant_id: str, /, *, request_options: RequestOptions | None = None) -> ListResult[APIKey]:
-        return self._list(path("/v1/tenants/{}/api-keys", tenant_id), request_options=request_options)
+    def list(self, organization_id: str, /, *, request_options: RequestOptions | None = None) -> ListResult[APIKey]:
+        return self._list(path("/v1/organizations/{}/api-keys", organization_id), request_options=request_options)
 
     def rotate(
         self,
-        tenant_id: str,
+        organization_id: str,
         api_key_id: str,
         /,
         *,
@@ -99,7 +99,7 @@ class APIKeys(APIResource):
         """Replace a key with a new one, shown once. The old one keeps working for ``overlap_hours``."""
         return self._request(
             "POST",
-            path("/v1/tenants/{}/api-keys/{}/rotate", tenant_id, api_key_id),
+            path("/v1/organizations/{}/api-keys/{}/rotate", organization_id, api_key_id),
             json=_overlap(overlap_hours),
             request_options=request_options,
         )
@@ -114,7 +114,7 @@ class Agents(APIResource):
 
     def create(
         self,
-        tenant_id: str,
+        organization_id: str,
         /,
         *,
         idempotency_key: str | None = None,
@@ -124,66 +124,76 @@ class Agents(APIResource):
         """Register an agent; its ``secret`` is in the answer, once. Idempotent: safe to retry."""
         return self._request(
             "POST",
-            path("/v1/tenants/{}/agents", tenant_id),
+            path("/v1/organizations/{}/agents", organization_id),
             json=params,
             idempotent=True,
             idempotency_key=idempotency_key,
             request_options=request_options,
         )
 
-    def list(self, tenant_id: str, /, *, request_options: RequestOptions | None = None) -> ListResult[Agent]:
-        return self._list(path("/v1/tenants/{}/agents", tenant_id), request_options=request_options)
+    def list(self, organization_id: str, /, *, request_options: RequestOptions | None = None) -> ListResult[Agent]:
+        return self._list(path("/v1/organizations/{}/agents", organization_id), request_options=request_options)
 
-    def delete(self, tenant_id: str, agent_id: str, /, *, request_options: RequestOptions | None = None) -> None:
-        self._request("DELETE", path("/v1/tenants/{}/agents/{}", tenant_id, agent_id), request_options=request_options)
+    def delete(self, organization_id: str, agent_id: str, /, *, request_options: RequestOptions | None = None) -> None:
+        self._request(
+            "DELETE", path("/v1/organizations/{}/agents/{}", organization_id, agent_id), request_options=request_options
+        )
 
     def set_disabled(
-        self, tenant_id: str, agent_id: str, /, disabled: bool, *, request_options: RequestOptions | None = None
+        self, organization_id: str, agent_id: str, /, disabled: bool, *, request_options: RequestOptions | None = None
     ) -> None:
         """Suspend (``True``) or resume (``False``) the agent. Prefer ``suspend`` and ``resume``."""
         self._request(
             "PATCH",
-            path("/v1/tenants/{}/agents/{}", tenant_id, agent_id),
+            path("/v1/organizations/{}/agents/{}", organization_id, agent_id),
             json={"disabled": disabled},
             request_options=request_options,
         )
 
     def suspend(
-        self, tenant_id: str, agent_id: str, /, *, request_options: RequestOptions | None = None
+        self, organization_id: str, agent_id: str, /, *, request_options: RequestOptions | None = None
     ) -> AgentStatus:
         """Suspend the agent: its tokens stop working at once. Reversible with ``resume``."""
         return self._request(
-            "POST", path("/v1/tenants/{}/agents/{}/suspend", tenant_id, agent_id), request_options=request_options
+            "POST",
+            path("/v1/organizations/{}/agents/{}/suspend", organization_id, agent_id),
+            request_options=request_options,
         )
 
-    def resume(self, tenant_id: str, agent_id: str, /, *, request_options: RequestOptions | None = None) -> AgentStatus:
+    def resume(
+        self, organization_id: str, agent_id: str, /, *, request_options: RequestOptions | None = None
+    ) -> AgentStatus:
         return self._request(
-            "POST", path("/v1/tenants/{}/agents/{}/resume", tenant_id, agent_id), request_options=request_options
+            "POST",
+            path("/v1/organizations/{}/agents/{}/resume", organization_id, agent_id),
+            request_options=request_options,
         )
 
     def decommission(
-        self, tenant_id: str, agent_id: str, /, *, request_options: RequestOptions | None = None
+        self, organization_id: str, agent_id: str, /, *, request_options: RequestOptions | None = None
     ) -> AgentStatus:
         """Retire the agent for good."""
         return self._request(
             "POST",
-            path("/v1/tenants/{}/agents/{}/decommission", tenant_id, agent_id),
+            path("/v1/organizations/{}/agents/{}/decommission", organization_id, agent_id),
             request_options=request_options,
         )
 
-    def suspend_all(self, tenant_id: str, /, *, request_options: RequestOptions | None = None) -> AgentsSuspended:
-        """Incident response: suspend every active agent of the organisation at once."""
-        return self._request("POST", path("/v1/tenants/{}/agents/kill-all", tenant_id), request_options=request_options)
-
-    def resume_all(self, tenant_id: str, /, *, request_options: RequestOptions | None = None) -> AgentsResumed:
-        """Resume every suspended agent of the organisation at once."""
+    def suspend_all(self, organization_id: str, /, *, request_options: RequestOptions | None = None) -> AgentsSuspended:
+        """Incident response: suspend every active agent of the organization at once."""
         return self._request(
-            "POST", path("/v1/tenants/{}/agents/resume-all", tenant_id), request_options=request_options
+            "POST", path("/v1/organizations/{}/agents/kill-all", organization_id), request_options=request_options
+        )
+
+    def resume_all(self, organization_id: str, /, *, request_options: RequestOptions | None = None) -> AgentsResumed:
+        """Resume every suspended agent of the organization at once."""
+        return self._request(
+            "POST", path("/v1/organizations/{}/agents/resume-all", organization_id), request_options=request_options
         )
 
     def rotate_secret(
         self,
-        tenant_id: str,
+        organization_id: str,
         agent_id: str,
         /,
         *,
@@ -193,22 +203,23 @@ class Agents(APIResource):
         """Issue a new secret, shown once; the old one keeps working for ``overlap_hours``."""
         return self._request(
             "POST",
-            path("/v1/tenants/{}/agents/{}/rotate-secret", tenant_id, agent_id),
+            path("/v1/organizations/{}/agents/{}/rotate-secret", organization_id, agent_id),
             json=_overlap(overlap_hours),
             request_options=request_options,
         )
 
     def list_sponsored_by(
-        self, tenant_id: str, user_id: str, /, *, request_options: RequestOptions | None = None
+        self, organization_id: str, user_id: str, /, *, request_options: RequestOptions | None = None
     ) -> ListResult[Agent]:
         """List the agents a person sponsors."""
         return self._list(
-            path("/v1/tenants/{}/agents/sponsored-by/{}", tenant_id, user_id), request_options=request_options
+            path("/v1/organizations/{}/agents/sponsored-by/{}", organization_id, user_id),
+            request_options=request_options,
         )
 
     def transfer_sponsorship(
         self,
-        tenant_id: str,
+        organization_id: str,
         from_user_id: str,
         to_user_id: str,
         /,
@@ -218,7 +229,7 @@ class Agents(APIResource):
         """Give every agent a person sponsors to another sponsor, as when the person leaves."""
         return self._request(
             "POST",
-            path("/v1/tenants/{}/agents/sponsored-by/{}/transfer", tenant_id, from_user_id),
+            path("/v1/organizations/{}/agents/sponsored-by/{}/transfer", organization_id, from_user_id),
             json={"to_user_id": to_user_id},
             request_options=request_options,
         )
@@ -226,12 +237,25 @@ class Agents(APIResource):
     def create_token(
         self, agent_id: str, /, secret: str, *, request_options: RequestOptions | None = None
     ) -> AgentToken:
-        """Get a short-lived access token for an agent from its id and secret. Sends no client credential."""
+        """Get a short-lived access token for an agent from its id and secret.
+
+        The OAuth client-credentials grant at ``POST /v1/oauth/token``, with the agent's id as
+        ``client_id`` and its secret as ``client_secret`` (HTTP Basic); it sends no client
+        credential of its own. A wrong secret raises :class:`~qeet_id.OAuthError` with code
+        ``invalid_client``, an agent that isn't active ``unauthorized_client``. Retried like a
+        read: asking again only issues another token.
+        """
+        if not isinstance(agent_id, str) or not agent_id:
+            raise ValueError("agent_id is required.")
+        if not isinstance(secret, str) or not secret:
+            raise ValueError("secret is required.")
         return self._request(
             "POST",
-            "/v1/agents/token",
-            json={"agent_id": agent_id, "secret": secret},
+            "/v1/oauth/token",
+            form={"grant_type": "client_credentials"},
             authenticate=False,
+            client_auth=(agent_id, secret),
+            retry_safe=True,
             request_options=request_options,
         )
 
@@ -241,7 +265,7 @@ class VerifiableCredentials(APIResource):
 
     def issue(
         self,
-        tenant_id: str,
+        organization_id: str,
         /,
         *,
         subject: str,
@@ -251,24 +275,29 @@ class VerifiableCredentials(APIResource):
         user_id: str | None = None,
         request_options: RequestOptions | None = None,
     ) -> IssuedCredential:
-        """Issue a credential as a signed JWT; ``user_id`` names the organisation's user it is about."""
+        """Issue a credential as a signed JWT; ``user_id`` names the organization's user it is about."""
         body: dict[str, object] = {"subject": subject, "type": type}
         for key, value in (("claims", claims), ("ttl_seconds", ttl_seconds), ("user_id", user_id)):
             if value is not None:
                 body[key] = value
         return self._request(
-            "POST", path("/v1/tenants/{}/credentials", tenant_id), json=body, request_options=request_options
+            "POST",
+            path("/v1/organizations/{}/credentials", organization_id),
+            json=body,
+            request_options=request_options,
         )
 
     def list(
-        self, tenant_id: str, /, *, request_options: RequestOptions | None = None
+        self, organization_id: str, /, *, request_options: RequestOptions | None = None
     ) -> ListResult[VerifiableCredential]:
-        return self._list(path("/v1/tenants/{}/credentials", tenant_id), request_options=request_options)
+        return self._list(path("/v1/organizations/{}/credentials", organization_id), request_options=request_options)
 
-    def revoke(self, tenant_id: str, credential_id: str, /, *, request_options: RequestOptions | None = None) -> None:
+    def revoke(
+        self, organization_id: str, credential_id: str, /, *, request_options: RequestOptions | None = None
+    ) -> None:
         self._request(
             "POST",
-            path("/v1/tenants/{}/credentials/{}/revoke", tenant_id, credential_id),
+            path("/v1/organizations/{}/credentials/{}/revoke", organization_id, credential_id),
             retry_safe=True,
             request_options=request_options,
         )
@@ -288,24 +317,27 @@ class VerifiableCredentials(APIResource):
 class AuthHooks(APIResource):
     """Authentication hooks: signed calls to your endpoint during sign-in."""
 
-    def list(self, tenant_id: str, /, *, request_options: RequestOptions | None = None) -> ListResult[AuthHook]:
-        return self._list(path("/v1/tenants/{}/auth-hooks", tenant_id), request_options=request_options)
+    def list(self, organization_id: str, /, *, request_options: RequestOptions | None = None) -> ListResult[AuthHook]:
+        return self._list(path("/v1/organizations/{}/auth-hooks", organization_id), request_options=request_options)
 
     def create(
         self,
-        tenant_id: str,
+        organization_id: str,
         /,
         *,
         request_options: RequestOptions | None = None,
         **params: Unpack[AuthHookCreateParams],
     ) -> AuthHook:
         return self._request(
-            "POST", path("/v1/tenants/{}/auth-hooks", tenant_id), json=params, request_options=request_options
+            "POST",
+            path("/v1/organizations/{}/auth-hooks", organization_id),
+            json=params,
+            request_options=request_options,
         )
 
     def update(
         self,
-        tenant_id: str,
+        organization_id: str,
         hook_id: str,
         /,
         *,
@@ -315,22 +347,26 @@ class AuthHooks(APIResource):
         """Change only the fields given."""
         return self._request(
             "PATCH",
-            path("/v1/tenants/{}/auth-hooks/{}", tenant_id, hook_id),
+            path("/v1/organizations/{}/auth-hooks/{}", organization_id, hook_id),
             json=params,
             request_options=request_options,
         )
 
-    def delete(self, tenant_id: str, hook_id: str, /, *, request_options: RequestOptions | None = None) -> None:
+    def delete(self, organization_id: str, hook_id: str, /, *, request_options: RequestOptions | None = None) -> None:
         self._request(
-            "DELETE", path("/v1/tenants/{}/auth-hooks/{}", tenant_id, hook_id), request_options=request_options
+            "DELETE",
+            path("/v1/organizations/{}/auth-hooks/{}", organization_id, hook_id),
+            request_options=request_options,
         )
 
     def test(
-        self, tenant_id: str, hook_id: str, /, *, request_options: RequestOptions | None = None
+        self, organization_id: str, hook_id: str, /, *, request_options: RequestOptions | None = None
     ) -> AuthHookTestResult:
         """Call the hook with a sample payload and report what it answered."""
         return self._request(
-            "POST", path("/v1/tenants/{}/auth-hooks/{}/test", tenant_id, hook_id), request_options=request_options
+            "POST",
+            path("/v1/organizations/{}/auth-hooks/{}/test", organization_id, hook_id),
+            request_options=request_options,
         )
 
 
@@ -363,18 +399,18 @@ class WebhookDeliveries(APIResource):
         )
 
     def retry_failed(
-        self, tenant_id: str, webhook_id: str, /, *, request_options: RequestOptions | None = None
+        self, organization_id: str, webhook_id: str, /, *, request_options: RequestOptions | None = None
     ) -> WebhookDeliveriesRequeued:
         """Send again, each with fresh attempts, up to 1,000 of the subscription's given-up deliveries."""
         return self._request(
             "POST",
-            path("/v1/tenants/{}/webhooks/{}/deliveries/retry", tenant_id, webhook_id),
+            path("/v1/organizations/{}/webhooks/{}/deliveries/retry", organization_id, webhook_id),
             request_options=request_options,
         )
 
     def list_attempts(
         self,
-        tenant_id: str,
+        organization_id: str,
         webhook_id: str,
         delivery_id: str,
         /,
@@ -383,7 +419,7 @@ class WebhookDeliveries(APIResource):
     ) -> ListResult[WebhookDeliveryAttempt]:
         """Every attempt to send a delivery, oldest first."""
         return self._list(
-            path("/v1/tenants/{}/webhooks/{}/deliveries/{}/attempts", tenant_id, webhook_id, delivery_id),
+            path("/v1/organizations/{}/webhooks/{}/deliveries/{}/attempts", organization_id, webhook_id, delivery_id),
             request_options=request_options,
         )
 
@@ -419,13 +455,13 @@ class Webhooks(APIResource):
         return self._request("GET", path("/v1/webhooks/{}", webhook_id), request_options=request_options)
 
     def list(
-        self, tenant_id: str, /, *, request_options: RequestOptions | None = None
+        self, organization_id: str, /, *, request_options: RequestOptions | None = None
     ) -> ListResult[WebhookSubscription]:
-        return self._list(path("/v1/tenants/{}/webhooks", tenant_id), request_options=request_options)
+        return self._list(path("/v1/organizations/{}/webhooks", organization_id), request_options=request_options)
 
     def update(
         self,
-        tenant_id: str,
+        organization_id: str,
         webhook_id: str,
         /,
         *,
@@ -435,7 +471,7 @@ class Webhooks(APIResource):
         """Change the URL, the events, or both."""
         return self._request(
             "PATCH",
-            path("/v1/tenants/{}/webhooks/{}", tenant_id, webhook_id),
+            path("/v1/organizations/{}/webhooks/{}", organization_id, webhook_id),
             json=params,
             request_options=request_options,
         )
@@ -445,15 +481,17 @@ class Webhooks(APIResource):
         self._request("DELETE", path("/v1/webhooks/{}", webhook_id), request_options=request_options)
 
     def enable(
-        self, tenant_id: str, webhook_id: str, /, *, request_options: RequestOptions | None = None
+        self, organization_id: str, webhook_id: str, /, *, request_options: RequestOptions | None = None
     ) -> WebhookSubscription:
         """Turn a disabled subscription back on; deliveries held meanwhile are then sent."""
         return self._request(
-            "POST", path("/v1/tenants/{}/webhooks/{}/enable", tenant_id, webhook_id), request_options=request_options
+            "POST",
+            path("/v1/organizations/{}/webhooks/{}/enable", organization_id, webhook_id),
+            request_options=request_options,
         )
 
     def rotate_secret(
-        self, tenant_id: str, webhook_id: str, /, *, request_options: RequestOptions | None = None
+        self, organization_id: str, webhook_id: str, /, *, request_options: RequestOptions | None = None
     ) -> WebhookSecret:
         """Replace the signing secret and return the new one, once.
 
@@ -462,7 +500,7 @@ class Webhooks(APIResource):
         """
         return self._request(
             "POST",
-            path("/v1/tenants/{}/webhooks/{}/rotate-secret", tenant_id, webhook_id),
+            path("/v1/organizations/{}/webhooks/{}/rotate-secret", organization_id, webhook_id),
             request_options=request_options,
         )
 
@@ -471,33 +509,35 @@ class Webhooks(APIResource):
         return self._request("POST", path("/v1/webhooks/{}/test", webhook_id), request_options=request_options)
 
     def list_event_types(
-        self, tenant_id: str, /, *, request_options: RequestOptions | None = None
+        self, organization_id: str, /, *, request_options: RequestOptions | None = None
     ) -> ListResult[WebhookEventTypeInfo]:
         """The catalogue of events a subscription can name."""
-        return self._list(path("/v1/tenants/{}/webhooks/events", tenant_id), request_options=request_options)
+        return self._list(
+            path("/v1/organizations/{}/webhooks/events", organization_id), request_options=request_options
+        )
 
 
 class Secrets(APIResource):
-    """The organisation's encrypted secrets store."""
+    """The organization's encrypted secrets store."""
 
-    def list(self, tenant_id: str, /, *, request_options: RequestOptions | None = None) -> ListResult[Secret]:
-        return self._list(path("/v1/tenants/{}/secrets", tenant_id), request_options=request_options)
+    def list(self, organization_id: str, /, *, request_options: RequestOptions | None = None) -> ListResult[Secret]:
+        return self._list(path("/v1/organizations/{}/secrets", organization_id), request_options=request_options)
 
     def create(
         self,
-        tenant_id: str,
+        organization_id: str,
         /,
         *,
         request_options: RequestOptions | None = None,
         **params: Unpack[SecretCreateParams],
     ) -> Secret:
         return self._request(
-            "POST", path("/v1/tenants/{}/secrets", tenant_id), json=params, request_options=request_options
+            "POST", path("/v1/organizations/{}/secrets", organization_id), json=params, request_options=request_options
         )
 
     def update(
         self,
-        tenant_id: str,
+        organization_id: str,
         secret_id: str,
         /,
         *,
@@ -506,22 +546,26 @@ class Secrets(APIResource):
     ) -> Secret:
         return self._request(
             "PATCH",
-            path("/v1/tenants/{}/secrets/{}", tenant_id, secret_id),
+            path("/v1/organizations/{}/secrets/{}", organization_id, secret_id),
             json=params,
             request_options=request_options,
         )
 
-    def delete(self, tenant_id: str, secret_id: str, /, *, request_options: RequestOptions | None = None) -> None:
+    def delete(self, organization_id: str, secret_id: str, /, *, request_options: RequestOptions | None = None) -> None:
         self._request(
-            "DELETE", path("/v1/tenants/{}/secrets/{}", tenant_id, secret_id), request_options=request_options
+            "DELETE",
+            path("/v1/organizations/{}/secrets/{}", organization_id, secret_id),
+            request_options=request_options,
         )
 
     def reveal(
-        self, tenant_id: str, secret_id: str, /, *, request_options: RequestOptions | None = None
+        self, organization_id: str, secret_id: str, /, *, request_options: RequestOptions | None = None
     ) -> SecretValue:
         """Return the secret's value. Audited."""
         return self._request(
-            "POST", path("/v1/tenants/{}/secrets/{}/reveal", tenant_id, secret_id), request_options=request_options
+            "POST",
+            path("/v1/organizations/{}/secrets/{}/reveal", organization_id, secret_id),
+            request_options=request_options,
         )
 
     def get_value(self, name: str, /, *, request_options: RequestOptions | None = None) -> SecretValue:
@@ -537,7 +581,7 @@ class TokenVault(APIResource):
 
     def create_provider(
         self,
-        tenant_id: str,
+        organization_id: str,
         /,
         *,
         request_options: RequestOptions | None = None,
@@ -546,22 +590,24 @@ class TokenVault(APIResource):
         """Register a provider, or replace one's settings."""
         return self._request(
             "POST",
-            path("/v1/tenants/{}/vault/tokens/providers", tenant_id),
+            path("/v1/organizations/{}/vault/tokens/providers", organization_id),
             json=params,
             request_options=request_options,
         )
 
     def list_providers(
-        self, tenant_id: str, /, *, request_options: RequestOptions | None = None
+        self, organization_id: str, /, *, request_options: RequestOptions | None = None
     ) -> ListResult[TokenVaultProvider]:
-        return self._list(path("/v1/tenants/{}/vault/tokens/providers", tenant_id), request_options=request_options)
+        return self._list(
+            path("/v1/organizations/{}/vault/tokens/providers", organization_id), request_options=request_options
+        )
 
     def delete_provider(
-        self, tenant_id: str, provider: str, /, *, request_options: RequestOptions | None = None
+        self, organization_id: str, provider: str, /, *, request_options: RequestOptions | None = None
     ) -> None:
         self._request(
             "DELETE",
-            path("/v1/tenants/{}/vault/tokens/providers/{}", tenant_id, provider),
+            path("/v1/organizations/{}/vault/tokens/providers/{}", organization_id, provider),
             request_options=request_options,
         )
 

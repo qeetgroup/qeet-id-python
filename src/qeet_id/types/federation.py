@@ -141,7 +141,7 @@ class Introspection(TypedDict, total=False):
     resource: str | list[str]
     exp: int
     iat: int
-    tenant_id: str
+    organization_id: str
     sid: str
     actor_type: Literal["user", "service", "agent"] | str
     agent_id: str
@@ -236,7 +236,7 @@ class Application(TypedDict):
     """An OAuth 2.0 / OpenID Connect client that signs people in with Qeet ID."""
 
     id: str
-    tenant_id: str
+    organization_id: str
     client_id: str
     """The OAuth ``client_id``."""
     type: Literal["confidential", "public"] | str
@@ -330,7 +330,7 @@ class OAuthResource(TypedDict):
     """An RFC 8707 resource. A token issued for it names it alone as audience."""
 
     id: str
-    tenant_id: str
+    organization_id: str
     identifier: str
     """An absolute URI without a fragment, unique on the platform."""
     name: NotRequired[str]
@@ -353,7 +353,7 @@ class ServicePrincipal(TypedDict):
     """A machine identity that gets tokens with the ``client_credentials`` grant."""
 
     id: str
-    tenant_id: str
+    organization_id: str
     name: str
     description: str
     scopes: list[str]
@@ -365,7 +365,7 @@ class ServicePrincipal(TypedDict):
 
 
 class ServicePrincipalCreateParams(TypedDict, total=False):
-    tenant_id: Required[str]
+    organization_id: Required[str]
     name: Required[str]
     description: str
     scopes: list[str]
@@ -413,7 +413,7 @@ class SAMLConnection(TypedDict):
     """An inbound SAML connection: Qeet ID is the service provider for an external identity provider."""
 
     id: str
-    tenant_id: str
+    organization_id: str
     name: str
     sp_entity_id: str
     """Give these to the identity provider: ``sp_entity_id``, ``acs_url``, ``sp_metadata_url``."""
@@ -483,7 +483,7 @@ class ConnectionTestResult(TypedDict):
 
 
 class SSOGroupMapping(TypedDict):
-    """Maps an identity provider group to one of the organisation's groups."""
+    """Maps an identity provider group to one of the organization's groups."""
 
     id: str
     idp_group: str
@@ -511,7 +511,7 @@ class SAMLServiceProvider(TypedDict):
     """A downstream service provider that signs people in with Qeet ID as its SAML identity provider."""
 
     id: str
-    tenant_id: str
+    organization_id: str
     name: str
     entity_id: str
     acs_url: str
@@ -582,7 +582,7 @@ class LDAPConnection(TypedDict):
     """A directory (LDAP or Active Directory) connection. The bind password is never returned."""
 
     id: str
-    tenant_id: str
+    organization_id: str
     name: str
     server_url: str
     start_tls: bool
@@ -644,7 +644,7 @@ class TokenPair(TypedDict):
     """When the session ends unless renewed before then."""
     session_id: str
     user_id: str
-    tenant_id: NotRequired[str | None]
+    organization_id: NotRequired[str | None]
 
 
 class MfaFactor(TypedDict):
@@ -698,7 +698,7 @@ class SCIMLastRequest(TypedDict):
 
 
 class SCIMConfig(TypedDict):
-    """The organisation's SCIM provisioning state. Tokens are never returned after they are issued."""
+    """The organization's SCIM provisioning state. Tokens are never returned after they are issued."""
 
     token_set: bool
     token_count: int
@@ -765,7 +765,7 @@ class SocialProvider(TypedDict):
     """A social sign-in provider. Its client secret is never returned."""
 
     id: str
-    tenant_id: str
+    organization_id: str
     provider: str
     """``github``, ``facebook``, ``x``, ``discord``, ``apple``, or any name for an OpenID Connect provider."""
     kind: Literal["oidc", "github", "facebook", "x", "discord", "apple"] | str
@@ -813,7 +813,7 @@ class AdminPortalLink(TypedDict):
     """A time-limited link that lets a customer's IT administrator set up SSO, SCIM or domains."""
 
     id: str
-    tenant_id: str
+    organization_id: str
     capabilities: list[AdminPortalCapability | str]
     created_by: str | None
     expires_at: str

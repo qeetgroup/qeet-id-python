@@ -46,7 +46,7 @@ from qeet_id._sync.resources.identity import (
     Domains,
     Groups,
     Invitations,
-    Tenants,
+    Organizations,
     Users,
 )
 from qeet_id._sync.resources.oauth import OAuth
@@ -133,8 +133,8 @@ class QeetID:
         )
         transport = self._transport
 
-        # Identity: the organisation, its people and groups.
-        self.tenants = Tenants(transport)
+        # Identity: the organization, its people and groups.
+        self.organizations = Organizations(transport)
         self.domains = Domains(transport)
         self.users = Users(transport)
         self.groups = Groups(transport)

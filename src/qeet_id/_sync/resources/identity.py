@@ -1,5 +1,5 @@
 # Generated from qeet_id/_async/resources/identity.py by scripts/unasync.py. Edit that file, not this one.
-"""Identity: the organisation, its domains, people, groups, invitations and branding (management.yaml)."""
+"""Identity: the organization, its domains, people, groups, invitations and branding (identity.yaml)."""
 
 from typing import Literal, Unpack
 
@@ -25,10 +25,10 @@ from qeet_id.types.identity import (
     LinkedIdentity,
     MembershipRemoval,
     MfaRequirement,
-    Tenant,
-    TenantBranding,
-    TenantDeletion,
-    TenantUpdateParams,
+    Organization,
+    OrganizationBranding,
+    OrganizationDeletion,
+    OrganizationUpdateParams,
     User,
     UserAccess,
     UserBulkCreateParams,
@@ -41,7 +41,7 @@ from qeet_id.types.identity import (
     UserUpdateParams,
 )
 
-__all__ = ["Branding", "Domains", "Groups", "Invitations", "Tenants", "Users"]
+__all__ = ["Branding", "Domains", "Groups", "Invitations", "Organizations", "Users"]
 
 _IMPORT_CONTENT_TYPES: dict[BulkImportSource, str] = {
     "auth0": "application/x-ndjson",
@@ -50,48 +50,66 @@ _IMPORT_CONTENT_TYPES: dict[BulkImportSource, str] = {
 }
 
 
-class Tenants(APIResource):
-    """The API key's organisation. Listing and creating organisations are a signed-in person's actions."""
+class Organizations(APIResource):
+    """The API key's organization. Listing and creating organizations are a signed-in person's actions."""
 
-    def get(self, tenant_id: str, /, *, request_options: RequestOptions | None = None) -> Tenant:
-        return self._request("GET", path("/v1/tenants/{}", tenant_id), request_options=request_options)
+    def get(self, organization_id: str, /, *, request_options: RequestOptions | None = None) -> Organization:
+        return self._request("GET", path("/v1/organizations/{}", organization_id), request_options=request_options)
 
     def update(
-        self, tenant_id: str, /, *, request_options: RequestOptions | None = None, **params: Unpack[TenantUpdateParams]
-    ) -> Tenant:
+        self,
+        organization_id: str,
+        /,
+        *,
+        request_options: RequestOptions | None = None,
+        **params: Unpack[OrganizationUpdateParams],
+    ) -> Organization:
         """Change only the fields given."""
-        return self._request("PATCH", path("/v1/tenants/{}", tenant_id), json=params, request_options=request_options)
+        return self._request(
+            "PATCH", path("/v1/organizations/{}", organization_id), json=params, request_options=request_options
+        )
 
-    def delete(self, tenant_id: str, /, *, request_options: RequestOptions | None = None) -> TenantDeletion:
-        """Schedule the organisation's deletion seven days from now. An owner may call it off."""
-        return self._request("DELETE", path("/v1/tenants/{}", tenant_id), request_options=request_options)
+    def delete(self, organization_id: str, /, *, request_options: RequestOptions | None = None) -> OrganizationDeletion:
+        """Schedule the organization's deletion seven days from now. An owner may call it off."""
+        return self._request("DELETE", path("/v1/organizations/{}", organization_id), request_options=request_options)
 
-    def cancel_deletion(self, tenant_id: str, /, *, request_options: RequestOptions | None = None) -> Tenant:
+    def cancel_deletion(
+        self, organization_id: str, /, *, request_options: RequestOptions | None = None
+    ) -> Organization:
         """Call off a scheduled deletion."""
-        return self._request("POST", path("/v1/tenants/{}/deletion/cancel", tenant_id), request_options=request_options)
+        return self._request(
+            "POST", path("/v1/organizations/{}/deletion/cancel", organization_id), request_options=request_options
+        )
 
 
 class Domains(APIResource):
-    """The organisation's domains: claim, verify by DNS, and route sign-in."""
+    """The organization's domains: claim, verify by DNS, and route sign-in."""
 
-    def create(self, tenant_id: str, /, domain: str, *, request_options: RequestOptions | None = None) -> Domain:
+    def create(self, organization_id: str, /, domain: str, *, request_options: RequestOptions | None = None) -> Domain:
         """Claim a domain and return the TXT record to publish."""
         return self._request(
-            "POST", path("/v1/tenants/{}/domains", tenant_id), json={"domain": domain}, request_options=request_options
+            "POST",
+            path("/v1/organizations/{}/domains", organization_id),
+            json={"domain": domain},
+            request_options=request_options,
         )
 
-    def list(self, tenant_id: str, /, *, request_options: RequestOptions | None = None) -> ListResult[Domain]:
-        return self._list(path("/v1/tenants/{}/domains", tenant_id), request_options=request_options)
+    def list(self, organization_id: str, /, *, request_options: RequestOptions | None = None) -> ListResult[Domain]:
+        return self._list(path("/v1/organizations/{}/domains", organization_id), request_options=request_options)
 
-    def verify(self, tenant_id: str, domain_id: str, /, *, request_options: RequestOptions | None = None) -> Domain:
+    def verify(
+        self, organization_id: str, domain_id: str, /, *, request_options: RequestOptions | None = None
+    ) -> Domain:
         """Look the TXT record up now and, on a match, mark the domain verified."""
         return self._request(
-            "POST", path("/v1/tenants/{}/domains/{}/verify", tenant_id, domain_id), request_options=request_options
+            "POST",
+            path("/v1/organizations/{}/domains/{}/verify", organization_id, domain_id),
+            request_options=request_options,
         )
 
     def update(
         self,
-        tenant_id: str,
+        organization_id: str,
         domain_id: str,
         /,
         *,
@@ -101,19 +119,21 @@ class Domains(APIResource):
         """Turn SSO routing and just-in-time provisioning on or off."""
         return self._request(
             "PATCH",
-            path("/v1/tenants/{}/domains/{}", tenant_id, domain_id),
+            path("/v1/organizations/{}/domains/{}", organization_id, domain_id),
             json=params,
             request_options=request_options,
         )
 
-    def delete(self, tenant_id: str, domain_id: str, /, *, request_options: RequestOptions | None = None) -> None:
+    def delete(self, organization_id: str, domain_id: str, /, *, request_options: RequestOptions | None = None) -> None:
         self._request(
-            "DELETE", path("/v1/tenants/{}/domains/{}", tenant_id, domain_id), request_options=request_options
+            "DELETE",
+            path("/v1/organizations/{}/domains/{}", organization_id, domain_id),
+            request_options=request_options,
         )
 
 
 class Users(APIResource):
-    """The organisation's people."""
+    """The organization's people."""
 
     def create(
         self,
@@ -122,7 +142,7 @@ class Users(APIResource):
         request_options: RequestOptions | None = None,
         **params: Unpack[UserCreateParams],
     ) -> User:
-        """Create a user in the API key's organisation. Idempotent: safe to retry."""
+        """Create a user in the API key's organization. Idempotent: safe to retry."""
         return self._request(
             "POST",
             "/v1/users",
@@ -142,7 +162,7 @@ class Users(APIResource):
         return self._request("PATCH", path("/v1/users/{}", user_id), json=params, request_options=request_options)
 
     def list(self, *, request_options: RequestOptions | None = None, **params: Unpack[UserListParams]) -> Page[User]:
-        """List the organisation's users, newest first.
+        """List the organization's users, newest first.
 
         Iterate the result for every user across every page, or take one page::
 
@@ -226,16 +246,16 @@ class Users(APIResource):
     def list_sessions(
         self, user_id: str, /, *, request_options: RequestOptions | None = None
     ) -> ListResult[UserSession]:
-        """List the user's live sessions in the organisation, most recently seen first."""
+        """List the user's live sessions in the organization, most recently seen first."""
         return self._list(path("/v1/users/{}/sessions", user_id), request_options=request_options)
 
     def revoke_session(
-        self, tenant_id: str, user_id: str, session_id: str, /, *, request_options: RequestOptions | None = None
+        self, organization_id: str, user_id: str, session_id: str, /, *, request_options: RequestOptions | None = None
     ) -> None:
         """End one of the user's sessions."""
         self._request(
             "DELETE",
-            path("/v1/tenants/{}/users/{}/sessions/{}", tenant_id, user_id, session_id),
+            path("/v1/organizations/{}/users/{}/sessions/{}", organization_id, user_id, session_id),
             request_options=request_options,
         )
 
@@ -250,11 +270,11 @@ class Users(APIResource):
         return self._request("GET", path("/v1/users/{}/security", user_id), request_options=request_options)
 
     def get_access(self, user_id: str, /, *, request_options: RequestOptions | None = None) -> UserAccess:
-        """The user's roles, groups and permission counts in the organisation."""
+        """The user's roles, groups and permission counts in the organization."""
         return self._request("GET", path("/v1/users/{}/access", user_id), request_options=request_options)
 
     def remove_membership(self, user_id: str, /, *, request_options: RequestOptions | None = None) -> MembershipRemoval:
-        """Remove a member whose account belongs to another organisation from this one."""
+        """Remove a member whose account belongs to another organization from this one."""
         return self._request("DELETE", path("/v1/users/{}/membership", user_id), request_options=request_options)
 
     def list_linked_identities(
@@ -295,23 +315,25 @@ class Groups(APIResource):
 
     def list(
         self,
-        tenant_id: str,
+        organization_id: str,
         /,
         *,
         role: str | None = None,
         grants: Literal["some", "none"] | None = None,
         request_options: RequestOptions | None = None,
     ) -> ListResult[Group]:
-        """List the organisation's groups.
+        """List the organization's groups.
 
         Args:
-            tenant_id: The organisation.
+            organization_id: The organization.
             role: Only groups granted this role (needs ``role.read``).
             grants: ``some``: groups granted at least one role; ``none``: groups granted none.
             request_options: Settings for this call.
         """
         return self._list(
-            path("/v1/tenants/{}/groups", tenant_id), {"role": role, "grants": grants}, request_options=request_options
+            path("/v1/organizations/{}/groups", organization_id),
+            {"role": role, "grants": grants},
+            request_options=request_options,
         )
 
     def list_members(
@@ -327,33 +349,35 @@ class Groups(APIResource):
         self._request("DELETE", path("/v1/groups/{}/members/{}", group_id, user_id), request_options=request_options)
 
     def list_roles(
-        self, tenant_id: str, group_id: str, /, *, request_options: RequestOptions | None = None
+        self, organization_id: str, group_id: str, /, *, request_options: RequestOptions | None = None
     ) -> ListResult[GroupRole]:
         """List the roles granted to the group."""
-        return self._list(path("/v1/tenants/{}/groups/{}/roles", tenant_id, group_id), request_options=request_options)
+        return self._list(
+            path("/v1/organizations/{}/groups/{}/roles", organization_id, group_id), request_options=request_options
+        )
 
     def grant_role(
-        self, tenant_id: str, group_id: str, role_id: str, /, *, request_options: RequestOptions | None = None
+        self, organization_id: str, group_id: str, role_id: str, /, *, request_options: RequestOptions | None = None
     ) -> None:
         """Grant a role to the group; every member inherits it."""
         self._request(
             "POST",
-            path("/v1/tenants/{}/groups/{}/roles/{}", tenant_id, group_id, role_id),
+            path("/v1/organizations/{}/groups/{}/roles/{}", organization_id, group_id, role_id),
             request_options=request_options,
         )
 
     def revoke_role(
-        self, tenant_id: str, group_id: str, role_id: str, /, *, request_options: RequestOptions | None = None
+        self, organization_id: str, group_id: str, role_id: str, /, *, request_options: RequestOptions | None = None
     ) -> None:
         self._request(
             "DELETE",
-            path("/v1/tenants/{}/groups/{}/roles/{}", tenant_id, group_id, role_id),
+            path("/v1/organizations/{}/groups/{}/roles/{}", organization_id, group_id, role_id),
             request_options=request_options,
         )
 
 
 class Invitations(APIResource):
-    """Invitations to join the organisation. Accepting one is the invitee's own action."""
+    """Invitations to join the organization. Accepting one is the invitee's own action."""
 
     def create(
         self,
@@ -372,8 +396,8 @@ class Invitations(APIResource):
             request_options=request_options,
         )
 
-    def list(self, tenant_id: str, /, *, request_options: RequestOptions | None = None) -> ListResult[Invitation]:
-        return self._list(path("/v1/tenants/{}/invites", tenant_id), request_options=request_options)
+    def list(self, organization_id: str, /, *, request_options: RequestOptions | None = None) -> ListResult[Invitation]:
+        return self._list(path("/v1/organizations/{}/invites", organization_id), request_options=request_options)
 
     def resend(self, invitation_id: str, /, *, request_options: RequestOptions | None = None) -> InvitationResult:
         """Issue a new link, extend the expiry and email the invitation again."""
@@ -385,20 +409,22 @@ class Invitations(APIResource):
 
 
 class Branding(APIResource):
-    """The organisation's branding. Shown only while the plan includes custom branding."""
+    """The organization's branding. Shown only while the plan includes custom branding."""
 
-    def get(self, tenant_id: str, /, *, request_options: RequestOptions | None = None) -> TenantBranding:
-        return self._request("GET", path("/v1/tenants/{}/branding", tenant_id), request_options=request_options)
+    def get(self, organization_id: str, /, *, request_options: RequestOptions | None = None) -> OrganizationBranding:
+        return self._request(
+            "GET", path("/v1/organizations/{}/branding", organization_id), request_options=request_options
+        )
 
     def update(
         self,
-        tenant_id: str,
+        organization_id: str,
         /,
         *,
         request_options: RequestOptions | None = None,
         **params: Unpack[BrandingUpdateParams],
-    ) -> TenantBranding:
+    ) -> OrganizationBranding:
         """Replace the branding."""
         return self._request(
-            "PUT", path("/v1/tenants/{}/branding", tenant_id), json=params, request_options=request_options
+            "PUT", path("/v1/organizations/{}/branding", organization_id), json=params, request_options=request_options
         )

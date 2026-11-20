@@ -47,7 +47,7 @@ def jwk(key: ec.EllipticCurvePrivateKey, kid: str, **extra: Any) -> dict[str, An
 
 def claims(**overrides: Any) -> dict[str, Any]:
     now = int(time.time())
-    base = {"iss": ISSUER, "sub": "u1", "aud": AUDIENCE, "exp": now + 600, "iat": now, "tenant_id": "t1"}
+    base = {"iss": ISSUER, "sub": "u1", "aud": AUDIENCE, "exp": now + 600, "iat": now, "organization_id": "t1"}
     return {k: v for k, v in {**base, **overrides}.items() if v is not None}
 
 

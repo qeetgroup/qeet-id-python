@@ -170,8 +170,8 @@ def test_unknown_schemes_are_ignored_not_trusted() -> None:
     [
         "not json",
         "[1, 2]",
-        '{"id": "e1", "type": "user.created", "tenant_id": "t1", "occurred_at": "2026-11-05T09:30:00Z"}',
-        '{"id": 1, "type": "user.created", "tenant_id": "t1", "occurred_at": "x", "data": {}}',
+        '{"id": "e1", "type": "user.created", "organization_id": "t1", "occurred_at": "2026-11-05T09:30:00Z"}',
+        '{"id": 1, "type": "user.created", "organization_id": "t1", "occurred_at": "x", "data": {}}',
     ],
 )
 def test_a_body_that_isnt_an_event_is_refused(body: str) -> None:

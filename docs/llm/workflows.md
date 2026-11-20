@@ -49,14 +49,14 @@ generated sync method returns `Page[T]`). A route answering `{items, truncated?}
 ## Refresh the contract snapshot
 
 ```bash
-uv run --with pyyaml python scripts/snapshot_contract.py /path/to/qeet-id-server origin/main
+uv run --with pyyaml python scripts/snapshot_contract.py /path/to/qeet-id-server origin/develop
 make test    # a request the contract no longer allows fails here
 ```
 
 ## Recapture the webhook fixtures
 
 ```bash
-scripts/capture_webhook_fixtures.sh /path/to/qeet-id-server origin/main > tests/fixtures/webhook_deliveries.json
+scripts/capture_webhook_fixtures.sh /path/to/qeet-id-server origin/develop > tests/fixtures/webhook_deliveries.json
 ```
 
 Needs Go. It runs the server's own `deliver` and `sign`, copied from the ref, against a local receiver.
