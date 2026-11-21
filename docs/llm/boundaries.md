@@ -18,7 +18,7 @@ the PyPI package.
 | A person's own account (sessions, factors, passkeys, email change) | the hosted pages and `qeet-id-react` |
 | The Node.js and Go stories | `qeet-id-node`, `qeet-id-go` |
 | Documentation site | `qeet-id-docs` |
-| Organization / product standards | `qeet-context` (L0) / `qeet-id-context` (L1) |
+| Organization / product standards | `qeet-context` (L0) / `qeet-id-files` (L1) |
 
 **The SDK never adds behaviour the API lacks.** A missing endpoint is server work.
 
@@ -52,7 +52,7 @@ A PyPI package whose **public names** (`qeet_id.__all__`, `qeet_id.types`, `qeet
 | **Any public name** | It is the package's contract |
 | Auth scheme or OAuth client authentication | Must match the server |
 | Retry policy | A wrong change duplicates server-side writes |
-| Webhook signature or header | Must match `internal/developer/webhooks` |
+| Webhook signature or header | Must match `internal/platform/crypto/requestsig` and `internal/developer/webhook` |
 | Exception classes | Callers catch them |
 | Python version floor | Affects who can install |
 | A runtime dependency | Changes what every consumer installs |

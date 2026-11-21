@@ -183,7 +183,7 @@ class SessionRevokedError(AuthenticationError):
 
 
 class PaymentRequiredError(APIError):
-    """402: the organisation's plan doesn't include this, or one of its limits is reached."""
+    """402: the organization's plan doesn't include this, or one of its limits is reached."""
 
 
 class PermissionDeniedError(APIError):

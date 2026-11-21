@@ -11,7 +11,7 @@ later, uv and Ruff, `mypy --strict`, three runtime dependencies (`httpx2`, `anyi
 built with `uv_build`.
 
 It is a **client of a contract it does not own.** The contract is `qeet-id-server`'s five OpenAPI
-documents (`api/openapi/{auth,management,federation,developer,operations}.yaml`), snapshotted in
+documents (`api/openapi/{identity,access,federation,developer,operations}.yaml`), snapshotted in
 `tests/contract/openapi.json`, with the server's handlers as the tiebreaker. The SDK wraps them and never
 adds behaviour the API lacks.
 

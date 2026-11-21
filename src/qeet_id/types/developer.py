@@ -54,9 +54,9 @@ class APIKey(TypedDict):
     """An API key's record. The key itself is shown only when it is created or rotated."""
 
     id: str
-    tenant_id: str
+    organization_id: str
     user_id: str | None
-    """The user a personal key acts for; ``None`` for an organisation key."""
+    """The user a personal key acts for; ``None`` for an organization key."""
     name: str
     prefix: str
     """The key's first characters, to recognise it by."""
@@ -71,7 +71,7 @@ class APIKey(TypedDict):
 
 
 class APIKeyCreateParams(TypedDict, total=False):
-    tenant_id: Required[str]
+    organization_id: Required[str]
     name: Required[str]
     user_id: str | None
     """Makes a personal key that acts for this user."""
@@ -140,12 +140,16 @@ class SponsorshipTransfer(TypedDict):
 
 
 class AgentToken(TypedDict):
-    """A token for an agent, from its id and secret."""
+    """A token for an agent, from its id and secret: the client-credentials grant's answer."""
 
     access_token: str
     token_type: str
     expires_in: int
+    """The access token's lifetime in seconds: the agent's own ``token_ttl_seconds``."""
+    expires_at: str
+    """When the access token expires (RFC 3339)."""
     scope: NotRequired[str]
+    """The agent's scopes, space-separated; absent when it holds none."""
 
 
 class AgentSecret(TypedDict):
@@ -185,7 +189,7 @@ class VerifiableCredentialIssueParams(TypedDict, total=False):
     claims: dict[str, Any]
     ttl_seconds: int
     user_id: str | None
-    """One of the organisation's users the credential is about."""
+    """One of the organization's users the credential is about."""
 
 
 class IssuedCredential(TypedDict):
@@ -274,7 +278,7 @@ class WebhookSubscription(TypedDict):
     """A webhook subscription: an endpoint and the events it receives."""
 
     id: str
-    tenant_id: str
+    organization_id: str
     url: str
     events: list[str]
     disabled_at: str | None
@@ -297,7 +301,7 @@ class WebhookCreateParams(TypedDict, total=False):
     """A public https URL."""
     events: Required[list[str]]
     """At least one event from the catalogue."""
-    tenant_id: str
+    organization_id: str
 
 
 class WebhookUpdateParams(TypedDict, total=False):

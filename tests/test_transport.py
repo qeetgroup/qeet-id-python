@@ -350,7 +350,7 @@ def test_only_transient_failures_are_retryable() -> None:
 
 def test_paths_encode_each_identifier_as_one_segment() -> None:
     assert path("/v1/users/{}/sessions", "u/1?x") == "/v1/users/u%2F1%3Fx/sessions"
-    assert path("/v1/tenants/{}/roles/{}", "t 1", "r%1") == "/v1/tenants/t%201/roles/r%251"
+    assert path("/v1/organizations/{}/roles/{}", "t 1", "r%1") == "/v1/organizations/t%201/roles/r%251"
 
 
 @pytest.mark.parametrize("bad", ["", " ", ".", ".."])
@@ -363,4 +363,4 @@ def test_paths_refuse_non_strings_and_wrong_counts() -> None:
     with pytest.raises(TypeError):
         path("/v1/users/{}", 42)  # type: ignore[arg-type]
     with pytest.raises(ValueError, match="needs 2"):
-        path("/v1/tenants/{}/users/{}", "t1")
+        path("/v1/organizations/{}/users/{}", "t1")

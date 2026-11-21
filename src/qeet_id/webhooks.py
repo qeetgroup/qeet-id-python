@@ -2,7 +2,7 @@
 
 Each delivery is a signed POST whose body is an event::
 
-    {"id": "…", "type": "user.created", "tenant_id": "…", "occurred_at": "2026-11-05T09:30:00Z", "data": {…}}
+    {"id": "…", "type": "user.created", "organization_id": "…", "occurred_at": "2026-11-05T09:30:00Z", "data": {…}}
 
 ``X-Qeet-Signature`` is ``sha256=`` and the hex HMAC-SHA256, keyed by the
 subscription's signing secret, of ``X-Qeet-Timestamp`` (Unix seconds), ``"."``
@@ -102,9 +102,9 @@ WebhookEventType = Literal[
     "credential.issued",
     "credential.revoked",
     "oidc.client_locked_out",
-    "tenant.suspended",
-    "tenant.reactivated",
-    "tenant.deleted",
+    "organization.suspended",
+    "organization.reactivated",
+    "organization.deleted",
 ]
 """An event a subscription can name, from the API's event catalogue.
 
@@ -131,7 +131,7 @@ class WebhookEvent(TypedDict):
 
     id: str
     type: WebhookEventType | Literal["test.ping"] | str
-    tenant_id: str
+    organization_id: str
     occurred_at: str
     """When the change happened (RFC 3339)."""
     data: dict[str, Any]
@@ -300,13 +300,14 @@ def _parse_event(body: bytes) -> WebhookEvent:
         event = json.loads(body)
     except ValueError:
         raise WebhookVerificationError("invalid_payload", "The delivery's body is not JSON.") from None
-    required: Iterable[str] = ("id", "type", "tenant_id", "occurred_at")
+    required: Iterable[str] = ("id", "type", "organization_id", "occurred_at")
     if (
         not isinstance(event, dict)
         or any(not isinstance(event.get(key), str) for key in required)
         or "data" not in event
     ):
         raise WebhookVerificationError(
-            "invalid_payload", "The delivery's body is not a Qeet ID event (id, type, tenant_id, occurred_at, data)."
+            "invalid_payload",
+            "The delivery's body is not a Qeet ID event (id, type, organization_id, occurred_at, data).",
         )
     return cast("WebhookEvent", event)

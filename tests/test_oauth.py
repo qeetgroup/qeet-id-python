@@ -44,6 +44,32 @@ async def test_client_credentials_expose_expires_in_and_expires_at(api: MockAPI,
     assert api.last.headers["authorization"] == basic("sp1", "s")
 
 
+async def test_an_agent_token_is_the_client_credentials_grant(api: MockAPI, kind: Kind) -> None:
+    answer = {**TOKEN, "expires_at": "2026-11-05T10:00:00Z", "scope": "files:read"}
+    api.answer({"status": 503}, {"json": answer})
+    token = await run(api.client(kind).agents.create_token("ag1", "agent-secret"))
+    assert (token["access_token"], token["expires_at"]) == ("at", "2026-11-05T10:00:00Z")
+    assert len(api.requests) == 2, "asking again only issues another token, so it is retried"
+    assert (api.last.method, api.last.path) == ("POST", "/v1/oauth/token")
+    assert api.last.headers["authorization"] == basic("ag1", "agent-secret")
+    assert api.last.form == {"grant_type": "client_credentials"}
+
+
+@pytest.mark.parametrize("error", ["invalid_client", "unauthorized_client"])
+async def test_a_refused_agent_token_is_an_oauth_error(api: MockAPI, kind: Kind, error: str) -> None:
+    api.answer({"status": 401 if error == "invalid_client" else 400, "json": {"error": error}})
+    with pytest.raises(OAuthError) as caught:
+        await run(api.client(kind).agents.create_token("ag1", "wrong"))
+    assert caught.value.code == error
+
+
+@pytest.mark.parametrize(("agent_id", "secret"), [("", "s"), ("ag1", "")])
+async def test_an_agent_token_needs_the_id_and_secret(api: MockAPI, kind: Kind, agent_id: str, secret: str) -> None:
+    with pytest.raises(ValueError, match="required"):
+        await run(api.client(kind).agents.create_token(agent_id, secret))
+    assert api.requests == []
+
+
 async def test_confidential_clients_use_basic_and_public_ones_the_form(api: MockAPI, kind: Kind) -> None:
     client = api.answer({"json": TOKEN}).client(kind)
     await run(client.oauth.refresh_token_grant(client_id="app", client_secret="s3cr3t", refresh_token="rt"))

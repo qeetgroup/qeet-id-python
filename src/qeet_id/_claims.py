@@ -24,7 +24,7 @@ class AccessTokenClaims(TypedDict, total=False):
     nbf: int
     jti: str
     user_id: str
-    tenant_id: str
+    organization_id: str
     sid: str
     """The session the token belongs to."""
     scope: str

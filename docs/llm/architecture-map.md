@@ -39,8 +39,8 @@
 ## Resources — one module per OpenAPI document
 
 ```text
-src/qeet_id/_async/resources/identity.py     management.yaml   tenants · domains · users · groups · invitations · branding
-src/qeet_id/_async/resources/access.py       auth.yaml         roles · permissions · relationships · decisions · auth_policies
+src/qeet_id/_async/resources/identity.py     identity.yaml     organizations · domains · users · groups · invitations · branding
+src/qeet_id/_async/resources/access.py       access.yaml       roles · permissions · relationships · decisions · auth_policies
                                                                security_policies · ip_rules · threat_detection
 src/qeet_id/_async/resources/federation.py   federation.yaml   applications · service_principals · saml_connections
                                                                saml_service_providers · ldap_connections · scim

@@ -1,6 +1,6 @@
 """Onboard a person: create them, give them a role and a group, and check what they may do.
 
-QEET_ID_API_KEY=qk_… QEET_ID_TENANT_ID=… python examples/manage_users.py
+QEET_ID_API_KEY=qk_… QEET_ID_ORGANIZATION_ID=… python examples/manage_users.py
 """
 
 import os
@@ -10,11 +10,11 @@ from qeet_id import ConflictError, QeetID
 
 def main() -> None:
     """Onboard Meera into the finance team."""
-    tenant_id = os.environ["QEET_ID_TENANT_ID"]
+    organization_id = os.environ["QEET_ID_ORGANIZATION_ID"]
     with QeetID(api_key=os.environ["QEET_ID_API_KEY"], app_info={"name": "brightleaf-onboarding"}) as client:
         try:
             user = client.users.create(
-                tenant_id=tenant_id,
+                organization_id=organization_id,
                 email="meera@brightleaffoods.in",
                 display_name="Meera Iyer",
                 idempotency_key="onboarding-meera-iyer",
@@ -23,13 +23,15 @@ def main() -> None:
             print(f"Not created: {error.code} (request {error.request_id})")
             return
 
-        finance = next((role for role in client.roles.list(tenant_id) if role["name"] == "finance"), None)
+        finance = next((role for role in client.roles.list(organization_id) if role["name"] == "finance"), None)
         if finance is not None:
-            client.roles.assign(tenant_id, user["id"], finance["id"])
+            client.roles.assign(organization_id, user["id"], finance["id"])
         group = client.groups.create(name="Accounts payable", description="Approves supplier invoices")
         client.groups.add_member(group["id"], user["id"])
 
-        allowed = client.permissions.check(user_id=user["id"], tenant_id=tenant_id, permission="invoice.approve")
+        allowed = client.permissions.check(
+            user_id=user["id"], organization_id=organization_id, permission="invoice.approve"
+        )
         print(f"{user['email']} may approve invoices: {allowed}")
 
         for member in client.users.list(status="active", limit=100):

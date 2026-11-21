@@ -2,7 +2,7 @@
 
 # 🐍 Qeet ID for Python
 
-**The server-side Python SDK for Qeet ID: manage an organisation's people and access, verify webhooks and access tokens, and run OAuth flows from Python.**
+**The server-side Python SDK for Qeet ID: manage an organization's people and access, verify webhooks and access tokens, and run OAuth flows from Python.**
 
 [![Python](https://img.shields.io/badge/Python-3.11%20%E2%80%93%203.15-3776AB?logo=python&logoColor=white)](#-install)
 [![Typed](https://img.shields.io/badge/typed-mypy%20--strict-2EA043)](#-typing)
@@ -70,16 +70,16 @@ import os
 from qeet_id import QeetID
 
 client = QeetID(api_key=os.environ["QEET_ID_API_KEY"])
-tenant_id = os.environ["QEET_ID_TENANT_ID"]
+organization_id = os.environ["QEET_ID_ORGANIZATION_ID"]
 
 user = client.users.create(
-    tenant_id=tenant_id,
+    organization_id=organization_id,
     email="meera@brightleaffoods.in",
     display_name="Meera Iyer",
 )
-client.roles.assign(tenant_id, user["id"], finance_role_id)
+client.roles.assign(organization_id, user["id"], finance_role_id)
 
-allowed = client.permissions.check(user_id=user["id"], tenant_id=tenant_id, permission="invoice.approve")
+allowed = client.permissions.check(user_id=user["id"], organization_id=organization_id, permission="invoice.approve")
 ```
 
 The same with `asyncio` (or trio):
@@ -144,17 +144,17 @@ names. Responses are typed dicts with the API's field names too (`user["display_
 
 | Area | Namespaces |
 |:--|:--|
-| 👥 **Identity** | `tenants` (the organisation) · `domains` · `users` · `groups` · `invitations` · `branding` |
+| 👥 **Identity** | `organizations` (the organization) · `domains` · `users` · `groups` · `invitations` · `branding` |
 | 🛡️ **Access** | `roles` · `permissions` · `relationships` (ReBAC tuples) · `decisions` (OpenID AuthZEN) · `auth_policies` · `security_policies` · `ip_rules` · `threat_detection` (bots, risk, anomalies) |
 | 🌐 **Federation** | `oauth` · `applications` (OAuth/OpenID clients and RFC 8707 resources) · `service_principals` · `saml_connections` · `saml_service_providers` · `ldap_connections` · `scim` · `social_providers` · `admin_portal_links` |
 | 🛠️ **Developer** | `api_keys` · `agents` · `verifiable_credentials` · `auth_hooks` · `webhooks` · `secrets` · `token_vault` |
 | 📊 **Operations** | `audit_logs` · `analytics` · `billing` · `gdpr` · `email_templates` · `retention` · `log_sinks` · `rate_limits` |
 
 ```python
-page = client.audit_logs.list(tenant_id, action="user.deleted", from_="2026-11-01T00:00:00Z")
-client.webhooks.update(tenant_id, webhook_id, events=["user.created", "user.deleted"])
-rotated = client.webhooks.rotate_secret(tenant_id, webhook_id)
-secrets = client.secrets.list(tenant_id)  # ListResult: iterate it; secrets.truncated says if the API capped it
+page = client.audit_logs.list(organization_id, action="user.deleted", from_="2026-11-01T00:00:00Z")
+client.webhooks.update(organization_id, webhook_id, events=["user.created", "user.deleted"])
+rotated = client.webhooks.rotate_secret(organization_id, webhook_id)
+secrets = client.secrets.list(organization_id)  # ListResult: iterate it; secrets.truncated says if the API capped it
 ```
 
 A field named after a Python keyword takes a trailing underscore and is sent without it: `from_` is `from`.
@@ -192,7 +192,7 @@ support), `detail`, `metadata`, `retryable`, `retry_after` and `headers`.
 from qeet_id import ConflictError, RateLimitError, ValidationError
 
 try:
-    client.users.create(tenant_id=tenant_id, email=email)
+    client.users.create(organization_id=organization_id, email=email)
 except ValidationError as error:
     for field in error.fields:
         print(field.field, field.code, field.message)
@@ -227,7 +227,7 @@ deployments or processes safe too:
 
 ```python
 client.users.create(
-    tenant_id=tenant_id,
+    organization_id=organization_id,
     email="meera@brightleaffoods.in",
     idempotency_key=f"onboarding-{employee.id}",  # 1 to 255 printable ASCII characters
 )
@@ -270,7 +270,7 @@ capped the list.
 Each delivery is a signed POST whose body is an event:
 
 ```json
-{"id": "…", "type": "user.created", "tenant_id": "…", "occurred_at": "2026-11-05T09:30:00Z", "data": {…}}
+{"id": "…", "type": "user.created", "organization_id": "…", "occurred_at": "2026-11-05T09:30:00Z", "data": {…}}
 ```
 
 `construct_webhook_event` checks `X-Qeet-Signature` (`sha256=` and the HMAC-SHA256 of `X-Qeet-Timestamp`, `.` and
@@ -363,7 +363,7 @@ try:
     claims = verifier.verify(bearer_token)
 except TokenVerificationError as error:
     raise Unauthorized(error.code)
-claims["sub"], claims.get("tenant_id"), claims.get("scope")
+claims["sub"], claims.get("organization_id"), claims.get("scope")
 ```
 
 `AsyncTokenVerifier` is the same with `await`. Or configure one directly with
@@ -391,11 +391,14 @@ claims = guard.verify(bearer_token, ["files:read"])  # AuthenticationError (401)
 ## 🤝 OAuth
 
 ```python
-# Machine-to-machine: a service principal's token (POST /v1/oauth/token).
+# Every grant goes to the one token endpoint, POST /v1/oauth/token; grant_type chooses it.
+
+# Machine-to-machine: a service principal's or an AI agent's own token.
 token = client.oauth.client_credentials_grant(client_id=sp_id, client_secret=sp_secret)
 token["access_token"], token["expires_in"], token["expires_at"]
+agent_token = client.agents.create_token(agent_id, agent_secret)["access_token"]  # the same grant, for an agent
 
-# The other grants (POST /v1/oauth/token-code). Leave client_secret out for a public client.
+# The application grants. Leave client_secret out for a public client.
 client.oauth.authorization_code_grant(
     client_id=app_id,
     client_secret=app_secret,

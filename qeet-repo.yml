@@ -1,5 +1,5 @@
 # qeet-id-python — repository context metadata (Level 2).
-# Inherits qeetgroup/qeet-context (L0) and qeetgroup/qeet-id-context (L1).
+# Inherits qeetgroup/qeet-context (L0) and qeetgroup/qeet-id-files (L1).
 
 schema_version: 1
 
@@ -7,7 +7,7 @@ context: {type: repository, level: L2, canonical: true, last_verified: "2026-11-
 
 inheritance:
   organization: {repository: qeetgroup/qeet-context, level: L0}
-  product:      {repository: qeetgroup/qeet-id-context, level: L1}
+  product:      {repository: qeetgroup/qeet-id-files, level: L1}
 
 repository:
   name: qeet-id-python
@@ -27,7 +27,7 @@ runtime:
   type_check: mypy --strict
   runtime_deps: [httpx2, anyio, cryptography]
 
-module: {name: qeet-id, import: qeet_id, version: "0.1.0"}  # raised by hand in the PR into main
+module: {name: qeet-id, import: qeet_id, version: "0.2.0"}  # raised by hand in the PR into main
 
 architecture:
   clients: [QeetID, AsyncQeetID]       # one core; async is the source, sync generated (ADR-0001)
@@ -43,7 +43,7 @@ architecture:
 contracts:
   consumes:
     api: qeet-id-server
-    documents: [api/openapi/auth.yaml, api/openapi/management.yaml, api/openapi/federation.yaml, api/openapi/developer.yaml, api/openapi/operations.yaml]
+    documents: [api/openapi/identity.yaml, api/openapi/access.yaml, api/openapi/federation.yaml, api/openapi/developer.yaml, api/openapi/operations.yaml]
     snapshot: tests/contract/openapi.json   # scripts/snapshot_contract.py
     tiebreaker: internal/ handlers
     base_url: https://api.id.qeet.in

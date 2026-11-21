@@ -6,6 +6,59 @@ All notable changes to the Qeet ID Python SDK are documented here. The format fo
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-11-21
+
+Follows the API's rename of tenant to organization, and its single OAuth token endpoint. The API accepts
+no old names alongside the new ones, so 0.1.0 can't call it: upgrade, then rename in your code as below.
+
+### Changed (breaking)
+
+- **Organization, not tenant, everywhere.** `client.tenants` is `client.organizations`
+  (`AsyncTenants` is `AsyncOrganizations`); every path under `/v1/tenants/{id}/…` is
+  `/v1/organizations/{id}/…`, and `/v1/users/{id}/tenants/{id}/…` is `/v1/users/{id}/organizations/{id}/…`.
+  Every `tenant_id` argument, request field and response field is `organization_id`. Types:
+  `Tenant` → `Organization`, `TenantUpdateParams` → `OrganizationUpdateParams`, `TenantDeletion` →
+  `OrganizationDeletion`, `TenantBranding` → `OrganizationBranding`, `TenantRateLimits` →
+  `OrganizationRateLimits` (its `tenant` bucket is `organization`). `home_tenant_name` is
+  `home_organization_name`; a decision's `decided_by.model` and an email template's `delivery_scope` say
+  `organization`.
+- **Access tokens** carry `organization_id` in place of `tenant_id`: `AccessTokenClaims` follows.
+- **Webhooks:** an event's `organization_id` replaces `tenant_id` (`construct_webhook_event` requires it), and
+  `tenant.suspended`, `tenant.reactivated` and `tenant.deleted` are `organization.suspended`,
+  `organization.reactivated` and `organization.deleted`.
+- **One token endpoint.** The authorization-code, refresh, token-exchange, device and CIBA grants post to
+  `POST /v1/oauth/token`, with `grant_type` choosing the grant; `/v1/oauth/token-code` is gone.
+- **Agent tokens** (`agents.create_token`) are the client-credentials grant at `POST /v1/oauth/token`: the
+  agent's id and secret go as HTTP Basic client credentials, in place of a JSON body to `/v1/agents/token`. A
+  refusal is an `OAuthError` (`invalid_client`, or `unauthorized_client` for an agent that isn't active), and
+  `AgentToken` gains `expires_at`. Asking again only issues another token, so the call is retried like a read.
+- `organizations.update` no longer takes `plan`, which the API refuses there, and takes `logo_url`;
+  `Organization` gains `logo_url`, its `plan` may be `starter`, and its `metadata` may be `None`.
+- Every request body field, query parameter and enum value the SDK sends or expects was compared with the API
+  documents, and these follow them:
+  - `users.list(mfa=…)` takes `"on"` or `"off"`: a boolean was sent as `true`/`false`, which the API refuses with
+    400. It also takes the API's newer filters `admins_without_mfa`, `in_group`, `id` and `email` (each a list,
+    sent repeated), `include_deleted`, `sort` (`created`, `name`, `last_seen`) and `order` (`asc`, `desc`).
+  - `User.status` may be `deleted`, with `deleted_at`, on a member listed with `include_deleted`.
+  - `audit_logs.anomalies.update_settings` takes `AuditAnomalySettingsUpdateParams`, with `enabled`,
+    `score_threshold` and `min_baseline_events` all required (an update replaces all three);
+    `AuditAnomalySettings` gains `organization_id`.
+  - `SecurityPolicyUpdateParams` drops `password_min_length` and `password_complexity`, which the API retired
+    and ignores, and `mfa_enforced_since`, which is read-only (it stays on `SecurityPolicy`).
+  - `BotActivity`'s verdicts are `items`, as the API sends them, not `recent`.
+  - `IPRuleList` gains `truncated`.
+  - `SAMLConnectionUpdateParams` takes `allow_idp_initiated`, and `SAMLServiceProviderCreateParams` and
+    `SAMLServiceProviderUpdateParams` take `status`.
+  - Enum values the API added: `audit.chain_checkpoint_gone` and `audit.chain_checkpoint_unsigned` on an audit
+    chain verification, `expired` on a data export.
+
+### Changed
+
+- The contract snapshot and webhook fixtures come from the server's `develop`, whose documents are
+  `identity.yaml` and `access.yaml` (formerly `management.yaml` and `auth.yaml`), its event catalogue in
+  `internal/developer/webhook`, and its request signing in `internal/platform/crypto/requestsig`.
+- Docstrings and documents spell organization as the API does.
+
 ## [0.1.0] — 2026-11-05
 
 The SDK, built against the API's five OpenAPI documents, with the coverage and behaviour of the Node.js and
@@ -58,5 +111,6 @@ Go SDKs.
 - `groups.create` sends no `tenant_id`: the API takes the organisation from the credential.
 - `PaymentRequiredError` for 402.
 
-[Unreleased]: https://github.com/qeetgroup/qeet-id-python/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/qeetgroup/qeet-id-python/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/qeetgroup/qeet-id-python/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/qeetgroup/qeet-id-python/releases/tag/v0.1.0

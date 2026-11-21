@@ -3,7 +3,7 @@
 Reads qeet-id-server's five OpenAPI documents and its webhook event catalogue
 out of a git ref (without checking it out) and writes what the tests need:
 
-    uv run --with pyyaml python scripts/snapshot_contract.py /path/to/qeet-id-server origin/main
+    uv run --with pyyaml python scripts/snapshot_contract.py /path/to/qeet-id-server origin/develop
 
 writes tests/contract/openapi.json. For every operation: its method and path,
 whether an API key may call it, its query parameters, whether it honours
@@ -20,7 +20,7 @@ from typing import Any
 
 import yaml
 
-DOCUMENTS = ("management", "auth", "federation", "developer", "operations")
+DOCUMENTS = ("identity", "access", "federation", "developer", "operations")
 METHODS = ("get", "post", "put", "patch", "delete")
 OUTPUT = Path(__file__).resolve().parent.parent / "tests" / "contract" / "openapi.json"
 
@@ -101,7 +101,7 @@ def operations(doc: dict[str, Any], name: str) -> list[dict[str, Any]]:
 
 
 def event_catalogue(events_go: str) -> list[str]:
-    """The event names of internal/developer/webhooks/events.go."""
+    """The event names of internal/developer/webhook/events.go."""
     block = events_go.split("var Events = []EventType{", 1)[1].split("\n}\n", 1)[0]
     return re.findall(r'^\s*\{"([a-z_.]+)",', block, flags=re.MULTILINE)
 
@@ -112,7 +112,7 @@ def main() -> int:
         print(__doc__, file=sys.stderr)
         return 2
     server = sys.argv[1]
-    ref = sys.argv[2] if len(sys.argv) > 2 else "origin/main"
+    ref = sys.argv[2] if len(sys.argv) > 2 else "origin/develop"
     commit = subprocess.run(
         ["git", "-C", server, "rev-parse", "--short", ref], check=True, capture_output=True, text=True
     ).stdout.strip()
@@ -124,7 +124,7 @@ def main() -> int:
         "description": "The API contract the SDK is tested against: scripts/snapshot_contract.py over "
         "qeet-id-server's api/openapi/*.yaml and webhook event catalogue. Regenerate it; don't edit it.",
         "source": {"ref": ref, "commit": commit},
-        "webhook_events": event_catalogue(git_show(server, ref, "internal/developer/webhooks/events.go")),
+        "webhook_events": event_catalogue(git_show(server, ref, "internal/developer/webhook/events.go")),
         "operations": sorted(ops, key=lambda op: (op["path"], op["method"])),
     }
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)

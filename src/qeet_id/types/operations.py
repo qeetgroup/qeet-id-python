@@ -17,6 +17,7 @@ __all__ = [
     "AnalyticsWeek",
     "AuditAnomaly",
     "AuditAnomalySettings",
+    "AuditAnomalySettingsUpdateParams",
     "AuditAnomalySummary",
     "AuditChainVerification",
     "AuditLogEntry",
@@ -39,6 +40,7 @@ __all__ = [
     "LogSinkCreateParams",
     "LogSinkTestResult",
     "LogSinkType",
+    "OrganizationRateLimits",
     "PaymentMethod",
     "RateLimitBucket",
     "RateLimitBuckets",
@@ -48,7 +50,6 @@ __all__ = [
     "RetentionRun",
     "Subscription",
     "SubscriptionCancellation",
-    "TenantRateLimits",
 ]
 
 # ---------------------------------------------------------------------------
@@ -59,7 +60,7 @@ class AuditLogEntry(TypedDict):
     """One entry of the hash-chained audit log."""
 
     id: str
-    tenant_id: str | None
+    organization_id: str | None
     action: str
     actor_type: str
     actor_user_id: str | None
@@ -99,7 +100,15 @@ class AuditChainVerification(TypedDict):
     last_verified_id: NotRequired[str]
     broken_at_id: NotRequired[str]
     broken_reason: NotRequired[str]
-    reason_code: NotRequired[Literal["audit.chain_prev_hash_mismatch", "audit.chain_row_hash_mismatch"] | str]
+    reason_code: NotRequired[
+        Literal[
+            "audit.chain_prev_hash_mismatch",
+            "audit.chain_row_hash_mismatch",
+            "audit.chain_checkpoint_gone",
+            "audit.chain_checkpoint_unsigned",
+        ]
+        | str
+    ]
 
 
 class AuditVerificationStatus(TypedDict):
@@ -118,7 +127,7 @@ class AuditAnomaly(TypedDict):
     """An audit event that departs from the actor's usual behaviour."""
 
     id: str
-    tenant_id: str
+    organization_id: str
     event_id: str
     actor_user_id: str | None
     actor_email: NotRequired[str | None]
@@ -140,7 +149,18 @@ class AuditAnomalySummary(TypedDict):
     resolved_7d: int
 
 
+class AuditAnomalySettingsUpdateParams(TypedDict):
+    """The anomaly-detection settings. An update replaces all three, so each is required."""
+
+    enabled: bool
+    score_threshold: float
+    """Events scoring at least this, from 0 to 1, are flagged."""
+    min_baseline_events: int
+    """Events an actor needs before their behaviour is judged."""
+
+
 class AuditAnomalySettings(TypedDict):
+    organization_id: str
     enabled: bool
     score_threshold: float
     """Events scoring at least this are flagged."""
@@ -253,7 +273,7 @@ class AnalyticsOverviewParams(TypedDict, total=False):
 
 
 class Subscription(TypedDict):
-    """The organisation's Qeet ID subscription. Status ``none`` means it has none."""
+    """The organization's Qeet ID subscription. Status ``none`` means it has none."""
 
     status: Literal["none", "trialing", "active", "past_due", "canceled"] | str
     plan_code: str
@@ -344,7 +364,7 @@ class CheckoutResult(TypedDict):
 
 
 class Entitlements(TypedDict):
-    """The organisation's plan: its features and limits."""
+    """The organization's plan: its features and limits."""
 
     plan: Literal["free", "starter", "pro", "enterprise"] | str
     features: dict[str, bool]
@@ -359,7 +379,7 @@ class ErasureRequest(TypedDict):
     """An erasure request. It runs when its grace period ends, unless cancelled first."""
 
     id: str
-    tenant_id: str
+    organization_id: str
     user_id: str
     requested_by: str | None
     reason: str | None
@@ -378,10 +398,10 @@ class ExportRequest(TypedDict):
     """A data export. ``payload`` is filled in once ``status`` is ``ready``."""
 
     id: str
-    tenant_id: str
+    organization_id: str
     user_id: str
     requested_by: str | None
-    status: Literal["pending", "ready", "failed"] | str
+    status: Literal["pending", "ready", "failed", "expired"] | str
     payload: NotRequired[dict[str, Any]]
     error: NotRequired[str]
     completed_at: str | None
@@ -419,7 +439,7 @@ class EmailTemplateContent(TypedDict, total=False):
 
 
 class EmailTemplate(TypedDict):
-    """A template as it is used: the organisation's override (``custom``), or the platform's default."""
+    """A template as it is used: the organization's override (``custom``), or the platform's default."""
 
     key: str
     name: str
@@ -427,7 +447,7 @@ class EmailTemplate(TypedDict):
     variables: NotRequired[list[str]]
     """The placeholders it may use."""
     custom: bool
-    delivery_scope: NotRequired[Literal["tenant", "platform"] | str]
+    delivery_scope: NotRequired[Literal["organization", "platform"] | str]
     subject: str
     body: str
     options: NotRequired[EmailTemplateOptions]
@@ -511,7 +531,7 @@ class RateLimitBucket(TypedDict):
 
 
 class RateLimitBuckets(TypedDict):
-    tenant: RateLimitBucket
+    organization: RateLimitBucket
     user: RateLimitBucket
     api_key: RateLimitBucket
 
@@ -525,13 +545,13 @@ class BuiltInRateLimit(TypedDict):
 
 
 class RateLimitsUpdateParams(TypedDict, total=False):
-    tenant: RateLimitBucket
+    organization: RateLimitBucket
     user: RateLimitBucket
     api_key: RateLimitBucket
 
 
-class TenantRateLimits(RateLimitsUpdateParams, total=False):
-    """The organisation's rate limits per scope, with the defaults and ceilings they sit within."""
+class OrganizationRateLimits(RateLimitsUpdateParams, total=False):
+    """The organization's rate limits per scope, with the defaults and ceilings they sit within."""
 
     defaults: RateLimitBuckets
     """Read-only."""

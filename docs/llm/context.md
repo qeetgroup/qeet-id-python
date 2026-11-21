@@ -15,7 +15,7 @@ method's request checked against `qeet-id-server`'s OpenAPI documents (snapshot 
 ## Context inheritance
 
 ```text
-qeet-context (L0)  →  qeet-id-context (L1)  →  qeet-id-server (the contract)
+qeet-context (L0)  →  qeet-id-files (L1)  →  qeet-id-server (the contract)
                                             →  qeet-id-python (L2 — this document)
 ```
 

@@ -17,11 +17,11 @@ UUID4 = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 @pytest.mark.parametrize(
     "create",
     [
-        lambda c, **k: c.users.create(tenant_id="t1", email="a@b.in", **k),
+        lambda c, **k: c.users.create(organization_id="t1", email="a@b.in", **k),
         lambda c, **k: c.groups.create(name="Finance", **k),
-        lambda c, **k: c.invitations.create(tenant_id="t1", email="a@b.in", **k),
-        lambda c, **k: c.service_principals.create(tenant_id="t1", name="etl", **k),
-        lambda c, **k: c.api_keys.create(tenant_id="t1", name="ci", **k),
+        lambda c, **k: c.invitations.create(organization_id="t1", email="a@b.in", **k),
+        lambda c, **k: c.service_principals.create(organization_id="t1", name="etl", **k),
+        lambda c, **k: c.api_keys.create(organization_id="t1", name="ci", **k),
         lambda c, **k: c.agents.create("t1", name="bot", sponsor_user_id="u1", **k),
         lambda c, **k: c.webhooks.create(url="https://h.example", events=["user.created"], **k),
         lambda c, **k: c.billing.checkout(
@@ -64,8 +64,8 @@ async def test_other_writes_are_not_retried(api: MockAPI, kind: Kind) -> None:
 
 async def test_permission_check_reads_allowed(api: MockAPI, kind: Kind) -> None:
     client = api.answer({"json": {"allowed": True}}, {"json": {"allowed": "yes"}}).client(kind)
-    assert await run(client.permissions.check(user_id="u1", tenant_id="t1", permission="x")) is True
-    assert await run(client.permissions.check(user_id="u1", tenant_id="t1", permission="x")) is False
+    assert await run(client.permissions.check(user_id="u1", organization_id="t1", permission="x")) is True
+    assert await run(client.permissions.check(user_id="u1", organization_id="t1", permission="x")) is False
 
 
 async def test_relationship_checks(api: MockAPI, kind: Kind) -> None:
@@ -95,7 +95,7 @@ async def test_grants_revoke_many_needs_one_selector(api: MockAPI, kind: Kind) -
 
 async def test_answers_are_shaped(api: MockAPI, kind: Kind) -> None:
     client = api.answer(
-        {"json": {"enabled": True, "items": [{"id": "ir1"}]}},
+        {"json": {"enabled": True, "items": [{"id": "ir1"}], "truncated": True}},
         {"json": {"items": [{"id": "p1"}]}},
         {"json": {}},
         {"json": {"evaluations": [{"decision": True}]}},
@@ -105,7 +105,7 @@ async def test_answers_are_shaped(api: MockAPI, kind: Kind) -> None:
         {"json": {}},
         {"json": {"keys": [{"kid": "k1"}]}},
     ).client(kind)
-    assert await run(client.ip_rules.list("t1")) == {"enabled": True, "data": [{"id": "ir1"}]}
+    assert await run(client.ip_rules.list("t1")) == {"enabled": True, "data": [{"id": "ir1"}], "truncated": True}
     assert await run(client.roles.set_permissions("t1", "r1", ["p1"])) == ListResult([{"id": "p1"}])
     assert await run(client.permissions.list_effective("t1", "u1")) == {"permissions": [], "grants": []}
     assert await run(client.decisions.evaluate_many("t1", [{"action": {"name": "read"}}])) == {
@@ -181,7 +181,7 @@ async def test_identifiers_are_checked_before_sending(api: MockAPI, kind: Kind) 
 
 async def test_identifiers_are_escaped(api: MockAPI, kind: Kind) -> None:
     await run(api.client(kind).email_templates.get("t1", "password reset/v2"))
-    assert api.last.path == "/v1/tenants/t1/email-templates/password%20reset%2Fv2"
+    assert api.last.path == "/v1/organizations/t1/email-templates/password%20reset%2Fv2"
 
 
 async def test_optional_fields_are_left_out(api: MockAPI, kind: Kind) -> None:
