@@ -157,7 +157,8 @@ class User(TypedDict):
     phone_verified_at: str | None
     display_name: str | None
     avatar_url: str | None
-    status: UserStatus | str
+    status: UserStatus | Literal["deleted"] | str
+    """``deleted`` only on a member since deleted, listed with ``include_deleted``."""
     metadata: dict[str, Any]
     """Free-form data. Empty when the user's home is another organization, which keeps it."""
     created_at: str
@@ -172,6 +173,8 @@ class User(TypedDict):
     home_organization_name: NotRequired[str | None]
     """The name of the organization that manages the account."""
     suspension: NotRequired[UserSuspension]
+    deleted_at: NotRequired[str | None]
+    """When the member was deleted; only on a member listed with ``include_deleted``."""
 
 
 class UserCreateParams(TypedDict, total=False):
@@ -208,11 +211,25 @@ class UserListParams(TypedDict, total=False):
     """A role name in the organization."""
     department: str
     """Matches ``metadata.department``."""
-    mfa: bool
-    """Whether the user has a confirmed second factor."""
+    mfa: Literal["on", "off"]
+    """Whether the user has a confirmed second factor: ``on`` or ``off``."""
     email_verified: bool
     status: UserStatus
     last_seen: Literal["today", "week", "month", "older", "never"]
+    admins_without_mfa: bool
+    """``True``: only the owners and admins with no second factor; ``False``: everyone else."""
+    in_group: bool
+    """``True``: only members in one of the organization's groups; ``False``: only those in none."""
+    id: list[str]
+    """Only these members, by id (up to 200)."""
+    email: list[str]
+    """Only these members, by email, in any case (up to 200)."""
+    include_deleted: bool
+    """Add the members since deleted, each with ``deleted_at`` and status ``deleted``."""
+    sort: Literal["created", "name", "last_seen"]
+    """The order; ``created`` by default. A cursor works only with the sort and order of the page that gave it."""
+    order: Literal["asc", "desc"]
+    """Newest or last seen first by default, and A to Z by name."""
 
 
 class DeletedUser(TypedDict):

@@ -357,8 +357,6 @@ class AuthPolicyUsage(TypedDict):
 class SecurityPolicyUpdateParams(TypedDict, total=False):
     """Session bounds, MFA enforcement and step-up rules. Durations are Go-style strings such as ``"720h"``."""
 
-    password_min_length: int
-    password_complexity: str
     session_max_age: str
     session_idle_timeout: str
     max_sessions: int | None
@@ -366,7 +364,6 @@ class SecurityPolicyUpdateParams(TypedDict, total=False):
     session_limit_action: Literal["evict_oldest", "refuse"]
     mfa_enforcement: Literal["optional", "required", "admin_only"]
     mfa_grace_days: int
-    mfa_enforced_since: str | None
     step_up_window: str
     step_up_methods: list[Literal["totp", "recovery_code", "otp", "webauthn", "push"]]
     settings: dict[str, Any]
@@ -376,6 +373,8 @@ class SecurityPolicy(SecurityPolicyUpdateParams, total=False):
     """The organization's security policy, or the platform defaults when none is saved."""
 
     organization_id: str
+    mfa_enforced_since: str | None
+    """Read-only: when the current MFA enforcement began, which starts the grace period."""
 
 
 # ---------------------------------------------------------------------------
@@ -402,6 +401,8 @@ class IPRuleList(TypedDict):
 
     enabled: bool
     data: list[IPRule]
+    truncated: bool
+    """Whether the API capped the list."""
 
 
 class IPRuleDecision(TypedDict):
@@ -450,7 +451,7 @@ class BotActivityStats(TypedDict):
 class BotActivity(TypedDict):
     """Recent bot-detection verdicts, a page at a time, with totals."""
 
-    recent: list[BotEvent]
+    items: list[BotEvent]
     next_cursor: NotRequired[str]
     total: int
     stats: BotActivityStats

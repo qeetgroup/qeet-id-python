@@ -13,6 +13,7 @@ from qeet_id.types.operations import (
     AnalyticsOverviewParams,
     AuditAnomaly,
     AuditAnomalySettings,
+    AuditAnomalySettingsUpdateParams,
     AuditAnomalySummary,
     AuditChainVerification,
     AuditLogEntry,
@@ -105,9 +106,9 @@ class AsyncAuditAnomalies(AsyncAPIResource):
         /,
         *,
         request_options: RequestOptions | None = None,
-        **settings: Unpack[AuditAnomalySettings],
+        **settings: Unpack[AuditAnomalySettingsUpdateParams],
     ) -> AuditAnomalySettings:
-        """Replace the anomaly-detection settings."""
+        """Replace the anomaly-detection settings: all three are required, as a left-out one would be stored as off."""
         return await self._request(
             "PUT",
             path("/v1/organizations/{}/audit/anomaly-settings", organization_id),

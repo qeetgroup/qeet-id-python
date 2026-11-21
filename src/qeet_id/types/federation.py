@@ -454,6 +454,8 @@ class SAMLConnectionCreateParams(_SAMLConnectionFields, total=False):
 
 class SAMLConnectionUpdateParams(_SAMLConnectionFields, total=False):
     name: str
+    allow_idp_initiated: bool
+    """Accept IdP-initiated sign-ins (unsolicited assertions). Off by default."""
 
 
 class SAMLConnectionImportParams(TypedDict, total=False):
@@ -538,6 +540,7 @@ class _SAMLServiceProviderFields(TypedDict, total=False):
     encrypt_assertions: bool
     attributes: list[SAMLAttributeMapping]
     assignment_required: bool
+    status: ConnectionStatus
 
 
 class SAMLServiceProviderCreateParams(_SAMLServiceProviderFields, total=False):

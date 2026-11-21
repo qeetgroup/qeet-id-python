@@ -34,6 +34,23 @@ no old names alongside the new ones, so 0.1.0 can't call it: upgrade, then renam
   `AgentToken` gains `expires_at`. Asking again only issues another token, so the call is retried like a read.
 - `organizations.update` no longer takes `plan`, which the API refuses there, and takes `logo_url`;
   `Organization` gains `logo_url`, its `plan` may be `starter`, and its `metadata` may be `None`.
+- Every request body field, query parameter and enum value the SDK sends or expects was compared with the API
+  documents, and these follow them:
+  - `users.list(mfa=…)` takes `"on"` or `"off"`: a boolean was sent as `true`/`false`, which the API refuses with
+    400. It also takes the API's newer filters `admins_without_mfa`, `in_group`, `id` and `email` (each a list,
+    sent repeated), `include_deleted`, `sort` (`created`, `name`, `last_seen`) and `order` (`asc`, `desc`).
+  - `User.status` may be `deleted`, with `deleted_at`, on a member listed with `include_deleted`.
+  - `audit_logs.anomalies.update_settings` takes `AuditAnomalySettingsUpdateParams`, with `enabled`,
+    `score_threshold` and `min_baseline_events` all required (an update replaces all three);
+    `AuditAnomalySettings` gains `organization_id`.
+  - `SecurityPolicyUpdateParams` drops `password_min_length` and `password_complexity`, which the API retired
+    and ignores, and `mfa_enforced_since`, which is read-only (it stays on `SecurityPolicy`).
+  - `BotActivity`'s verdicts are `items`, as the API sends them, not `recent`.
+  - `IPRuleList` gains `truncated`.
+  - `SAMLConnectionUpdateParams` takes `allow_idp_initiated`, and `SAMLServiceProviderCreateParams` and
+    `SAMLServiceProviderUpdateParams` take `status`.
+  - Enum values the API added: `audit.chain_checkpoint_gone` and `audit.chain_checkpoint_unsigned` on an audit
+    chain verification, `expired` on a data export.
 
 ### Changed
 

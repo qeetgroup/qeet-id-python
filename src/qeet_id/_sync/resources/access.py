@@ -525,7 +525,11 @@ class IPRules(APIResource):
             "GET", path("/v1/organizations/{}/ip-rules", organization_id), request_options=request_options
         )
         body = body if isinstance(body, dict) else {}
-        return {"enabled": body.get("enabled") is True, "data": body.get("items") or []}
+        return {
+            "enabled": body.get("enabled") is True,
+            "data": body.get("items") or [],
+            "truncated": body.get("truncated") is True,
+        }
 
     def create(
         self,

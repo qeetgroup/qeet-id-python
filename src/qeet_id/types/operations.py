@@ -17,6 +17,7 @@ __all__ = [
     "AnalyticsWeek",
     "AuditAnomaly",
     "AuditAnomalySettings",
+    "AuditAnomalySettingsUpdateParams",
     "AuditAnomalySummary",
     "AuditChainVerification",
     "AuditLogEntry",
@@ -99,7 +100,15 @@ class AuditChainVerification(TypedDict):
     last_verified_id: NotRequired[str]
     broken_at_id: NotRequired[str]
     broken_reason: NotRequired[str]
-    reason_code: NotRequired[Literal["audit.chain_prev_hash_mismatch", "audit.chain_row_hash_mismatch"] | str]
+    reason_code: NotRequired[
+        Literal[
+            "audit.chain_prev_hash_mismatch",
+            "audit.chain_row_hash_mismatch",
+            "audit.chain_checkpoint_gone",
+            "audit.chain_checkpoint_unsigned",
+        ]
+        | str
+    ]
 
 
 class AuditVerificationStatus(TypedDict):
@@ -140,7 +149,18 @@ class AuditAnomalySummary(TypedDict):
     resolved_7d: int
 
 
+class AuditAnomalySettingsUpdateParams(TypedDict):
+    """The anomaly-detection settings. An update replaces all three, so each is required."""
+
+    enabled: bool
+    score_threshold: float
+    """Events scoring at least this, from 0 to 1, are flagged."""
+    min_baseline_events: int
+    """Events an actor needs before their behaviour is judged."""
+
+
 class AuditAnomalySettings(TypedDict):
+    organization_id: str
     enabled: bool
     score_threshold: float
     """Events scoring at least this are flagged."""
@@ -381,7 +401,7 @@ class ExportRequest(TypedDict):
     organization_id: str
     user_id: str
     requested_by: str | None
-    status: Literal["pending", "ready", "failed"] | str
+    status: Literal["pending", "ready", "failed", "expired"] | str
     payload: NotRequired[dict[str, Any]]
     error: NotRequired[str]
     completed_at: str | None

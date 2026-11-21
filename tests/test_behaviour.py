@@ -95,7 +95,7 @@ async def test_grants_revoke_many_needs_one_selector(api: MockAPI, kind: Kind) -
 
 async def test_answers_are_shaped(api: MockAPI, kind: Kind) -> None:
     client = api.answer(
-        {"json": {"enabled": True, "items": [{"id": "ir1"}]}},
+        {"json": {"enabled": True, "items": [{"id": "ir1"}], "truncated": True}},
         {"json": {"items": [{"id": "p1"}]}},
         {"json": {}},
         {"json": {"evaluations": [{"decision": True}]}},
@@ -105,7 +105,7 @@ async def test_answers_are_shaped(api: MockAPI, kind: Kind) -> None:
         {"json": {}},
         {"json": {"keys": [{"kid": "k1"}]}},
     ).client(kind)
-    assert await run(client.ip_rules.list("t1")) == {"enabled": True, "data": [{"id": "ir1"}]}
+    assert await run(client.ip_rules.list("t1")) == {"enabled": True, "data": [{"id": "ir1"}], "truncated": True}
     assert await run(client.roles.set_permissions("t1", "r1", ["p1"])) == ListResult([{"id": "p1"}])
     assert await run(client.permissions.list_effective("t1", "u1")) == {"permissions": [], "grants": []}
     assert await run(client.decisions.evaluate_many("t1", [{"action": {"name": "read"}}])) == {
